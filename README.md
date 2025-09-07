@@ -22,7 +22,7 @@ This repo provides a **clickable front‑end prototype** and maps the **exact de
 1. Install **VS Code** and the extension **_Live Server_** (by Ritwick Dey).
 2. Open the repository folder in VS Code (it should contain: `startup.html`, `Project Root Interface/`, `Clinic Project/`, `Bank Project/`, `action/`, `oldmodel/`).
 3. In the Explorer, right‑click **`startup.html`** → **Open with Live Server**.
-4. Your browser should open `http://127.0.0.1:<port>/startup.html`.  
+4. Your browser should open `http://127.0.0.1:5500/startup.html`.  
    (If the port differs—e.g., `5501`—that’s fine.)
 5. Use the **Startup & Feature Navigator** to access all demo pages and features.
 
@@ -88,46 +88,44 @@ This repo provides a **clickable front‑end prototype** and maps the **exact de
 
 ## 4) Direct URLs (when hosted locally with Live Server)
 
-> Replace `<port>` with your Live Server port (commonly `5500`).
-
 ### Main Entry Point
 - **Startup & Feature Navigator:**  
-  `http://127.0.0.1:<port>/startup.html`
+  `http://127.0.0.1:5500/startup.html`
 
 ### Home
 - Project Overview:  
-  `http://127.0.0.1:<port>/Project%20Root%20Interface/projectOverview.html`
+  `http://127.0.0.1:5500/Project%20Root%20Interface/projectOverview.html`
 - Template Gallery:  
-  `http://127.0.0.1:<port>/Project%20Root%20Interface/template.html`
+  `http://127.0.0.1:5500/Project%20Root%20Interface/template.html`
 
 ### Clinic
 - Document List:  
-  `http://127.0.0.1:<port>/Clinic%20Project/clinic-document-list.html`
+  `http://127.0.0.1:5500/Clinic%20Project/clinic-document-list.html`
 - Templates (filled):  
-  - API: `http://127.0.0.1:<port>/Clinic%20Project/clinic-template/apiTemplate.html`
-  - Developer Manual: `http://127.0.0.1:<port>/Clinic%20Project/clinic-template/developer-manual-template.html`
-  - SRS: `http://127.0.0.1:<port>/Clinic%20Project/clinic-template/srsTemplate.html`
-  - Summary: `http://127.0.0.1:<port>/Clinic%20Project/clinic-template/summarySystem.html`
-  - User Manual: `http://127.0.0.1:<port>/Clinic%20Project/clinic-template/user-manual-template.html`
+  - API: `http://127.0.0.1:5500/Clinic%20Project/clinic-template/apiTemplate.html`
+  - Developer Manual: `http://127.0.0.1:5500/Clinic%20Project/clinic-template/developer-manual-template.html`
+  - SRS: `http://127.0.0.1:5500/Clinic%20Project/clinic-template/srsTemplate.html`
+  - Summary: `http://127.0.0.1:5500/Clinic%20Project/clinic-template/summarySystem.html`
+  - User Manual: `http://127.0.0.1:5500/Clinic%20Project/clinic-template/user-manual-template.html`
 - Blank templates:
-  - API: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/api-blank-temp.html`
-  - Developer Manual: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/developer-manual-temp.html`
-  - SRS: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/srs-blank-template.html`
-  - Summary: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/summary-blank-template.html`
-  - Empty: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/empty-blank-temp.html`
-  - Commit: `http://127.0.0.1:<port>/Clinic%20Project/clinic-blank-template/commit-blank-template.htm`
+  - API: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/api-blank-temp.html`
+  - Developer Manual: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/developer-manual-temp.html`
+  - SRS: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/srs-blank-template.html`
+  - Summary: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/summary-blank-template.html`
+  - Empty: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/empty-blank-temp.html`
+  - Commit: `http://127.0.0.1:5500/Clinic%20Project/clinic-blank-template/commit-blank-template.htm`
 
 ### Bank
 - Document List:  
-  `http://127.0.0.1:<port>/Bank%20Project/bank-document-list.html`
+  `http://127.0.0.1:5500/Bank%20Project/bank-document-list.html`
 - Editors:  
-  - Developer Manual: `http://127.0.0.1:<port>/Bank%20Project/bank-template/bank-management-editor.html`
+  - Developer Manual: `http://127.0.0.1:5500/Bank%20Project/bank-template/bank-management-editor.html`
 - Add Document:  
-  `http://127.0.0.1:<port>/Bank%20Project/action/addDocument.html`
+  `http://127.0.0.1:5500/Bank%20Project/action/addDocument.html`
 
 ### Shared
-- Editor V2: `http://127.0.0.1:<port>/action/editor-Edit.html`
-- Multi‑user Lock Simulation: `http://127.0.0.1:<port>/action/multiUser_locked_simulated.html`
+- Editor V2: `http://127.0.0.1:5500/action/editor-Edit.html`
+- Multi‑user Lock Simulation: `http://127.0.0.1:5500/action/multiUser_locked_simulated.html`
 
 ---
 
@@ -142,7 +140,7 @@ This repo provides a **clickable front‑end prototype** and maps the **exact de
 ## Troubleshooting
 - **Blank/unstyled pages** → Check internet (for CDNs) and verify you’re serving via HTTP (Live Server / `http.server`).
 - **Links 404** → Confirm you launched from the **repo root**, keep folder names intact.
-- **Different port** → Update `<port>` in URLs.
+- **Different port** → Update `5500` in URLs.
 
 ---
 
