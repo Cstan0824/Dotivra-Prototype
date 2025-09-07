@@ -1,6 +1,6 @@
 # Dotivra Prototype — Client Demo Guide
 
-This repo **clickable front‑end prototype** and maps the **exact demo flow shown in your colleague’s video** so clients can follow along without confusion. It also explains how to run the site via **VS Code (Live Server)** and lists **direct URLs** to key pages.
+This repo provides a **clickable front‑end prototype** and maps the **exact demo flow shown in your colleague’s video** so clients can follow along without confusion. It also explains how to run the site via **VS Code (Live Server)** and lists **direct URLs** to key pages.
 
 ---
 
