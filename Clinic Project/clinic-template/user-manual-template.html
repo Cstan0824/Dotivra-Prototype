@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Management System - User Manual</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+            'times': ['Times New Roman', 'serif']
+          },
+          colors: {
+            'google-blue': '#1a73e8',
+            'google-blue-dark': '#1557b0',
+            'google-gray': '#5f6368',
+            'google-gray-dark': '#3c4043',
+            'google-gray-light': '#f1f3f4',
+            'google-border': '#e8eaed',
+            'google-bg': '#f9fbfd'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .document-shadow { box-shadow: 0 0 15px rgba(0,0,0,0.08); }
+    .toolbar-btn{ transition: all .15s ease; }
+    .toolbar-btn:hover{ background-color:#f1f3f4 !important; }
+    .editor-transition { transition: width 0.3s ease; }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-ai {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 18px 18px 18px 4px;
+    }
+    .code-block {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      margin: 8px 0;
+    }
+    .user-section {
+      border-left: 4px solid #28a745;
+      padding-left: 16px;
+      margin: 16px 0;
+    }
+    .field-description {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="flex-1 flex flex-col bg-white editor-transition">
+      <!-- Header -->
+      <div class="bg-white border-b border-google-border">
+        <div class="px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-green-600 text-white flex items-center justify-center text-sm font-semibold">C</div>
+            <div id="docTitle" class="text-sm md:text-base font-medium text-google-gray-dark px-1 select-none">
+              Clinic Management System - User Manual
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="inline-flex items-center gap-2 px-4 py-2 bg-google-blue text-white text-sm rounded-full hover:bg-google-blue-dark">
+              Share
+            </button>
+            <div class="flex -space-x-2">
+              <div class="w-8 h-8 rounded-full bg-green-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="User Support Team">US</div>
+              <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Documentation Team">DT</div>
+              <div class="w-8 h-8 rounded-full bg-purple-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="QA Team">QA</div>
+            </div>
+            <button id="aiOpenV2" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              AI Assistant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main workspace -->
+      <div class="flex min-h-0 flex-1">
+        <!-- Editor Area -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <!-- Google Docs Style Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-1">
+            <div class="flex items-center gap-1">
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">File</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Edit</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">View</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Insert</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Format</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Tools</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Extensions</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Help</button>
+            </div>
+          </div>
+
+          <!-- Formatting Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-2">
+            <div class="flex items-center gap-1">
+              <!-- Undo/Redo -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Undo (Ctrl+Z)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Redo (Ctrl+Y)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Print (Ctrl+P)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Zoom -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Zoom">
+                <option>100%</option>
+                <option>125%</option>
+                <option>150%</option>
+                <option>200%</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Styles -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[120px]" title="Styles">
+                <option>Normal text</option>
+                <option>Title</option>
+                <option>Subtitle</option>
+                <option>Heading 1</option>
+                <option>Heading 2</option>
+                <option>Heading 3</option>
+              </select>
+
+              <!-- Font Family -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[140px]" title="Font">
+                <option>Times New Roman</option>
+                <option>Arial</option>
+                <option>Calibri</option>
+                <option>Georgia</option>
+                <option>Verdana</option>
+              </select>
+
+              <!-- Font Size -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Font size">
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option selected>12</option>
+                <option>14</option>
+                <option>16</option>
+                <option>18</option>
+                <option>24</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Text Formatting -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bold (Ctrl+B)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M8 4h3a3 3 0 010 6H8zM8 10h4a3 3 0 010 6H8z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Italic (Ctrl+I)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4h6v2h-2.586l-3.828 8H16v2H8v-2h2.586l3.828-8H10z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Underline (Ctrl+U)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4h2v5a3 3 0 006 0V4h2v5a5 5 0 11-10 0V4zM4 16h12v2H4z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Text color">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Alignment -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align left (Ctrl+Shift+L)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM3 7h10v2H3zM3 10h14v2H3zM3 13h10v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align center (Ctrl+Shift+E)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM5 7h10v2H5zM3 10h14v2H3zM5 13h10v2H5z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align right (Ctrl+Shift+R)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM7 7h10v2H7zM3 10h14v2H3zM7 13h10v2H7z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Lists -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bulleted list (Ctrl+Shift+8)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4h10v2H7zM3 4h2v2H3zM7 9h10v2H7zM3 9h2v2H3zM7 14h10v2H7zM3 14h2v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Numbered list (Ctrl+Shift+7)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h1v5H3zM5 4h12v2H5zM3 10h1v5H3zM5 10h12v2H5zM3 16h1v1H3zM5 16h12v2H5z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- More tools -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert link (Ctrl+K)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert image">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document -->
+          <div class="flex-1 overflow-auto bg-google-bg px-4 py-8 md:px-12 lg:px-16">
+            <div class="mx-auto bg-white document-shadow w-[816px] min-h-[1056px]">
+              <div id="page" class="font-times text-gray-900" style="padding: 72px 64px; font-size: 12pt; line-height: 1.5;">
+                
+                <h1 class="text-center font-bold text-xl mb-6">Clinic Management System - User Manual</h1>
+                
+                <h2 class="font-bold text-lg mt-8 mb-3">Table of Contents</h2>
+                <ol class="list-decimal ml-6 space-y-1 text-sm">
+                  <li><a href="#system-overview" class="text-blue-600 hover:underline">System Overview</a></li>
+                  <li><a href="#getting-started" class="text-blue-600 hover:underline">Getting Started</a></li>
+                  <li><a href="#authentication-login" class="text-blue-600 hover:underline">Authentication & Login</a></li>
+                  <li><a href="#patient-management" class="text-blue-600 hover:underline">Patient Management</a></li>
+                  <li><a href="#appointment-management" class="text-blue-600 hover:underline">Appointment Management</a></li>
+                  <li><a href="#consultation-management" class="text-blue-600 hover:underline">Consultation Management</a></li>
+                  <li><a href="#queue-management" class="text-blue-600 hover:underline">Queue Management</a></li>
+                  <li><a href="#medicine-inventory" class="text-blue-600 hover:underline">Medicine & Inventory Management</a></li>
+                  <li><a href="#treatment-management" class="text-blue-600 hover:underline">Treatment Management</a></li>
+                  <li><a href="#billing-invoicing" class="text-blue-600 hover:underline">Billing & Invoicing</a></li>
+                  <li><a href="#staff-management" class="text-blue-600 hover:underline">Staff Management</a></li>
+                  <li><a href="#reports-analytics" class="text-blue-600 hover:underline">Reports & Analytics</a></li>
+                  <li><a href="#troubleshooting" class="text-blue-600 hover:underline">Troubleshooting</a></li>
+                  <li><a href="#faq" class="text-blue-600 hover:underline">Frequently Asked Questions</a></li>
+                </ol>
+
+                <hr class="my-8 border-gray-300">
+
+                <h2 id="system-overview" class="font-bold text-lg mt-8 mb-3">1. System Overview</h2>
+                
+                <p class="mb-4">The Clinic Management System is a comprehensive web-based application designed to manage all aspects of a medical clinic's operations. The system provides tools for patient registration, appointment scheduling, consultation management, medicine inventory, treatment tracking, billing, and comprehensive reporting.</p>
+
+                <h3 class="font-semibold mt-6 mb-2">Key Features</h3>
+                <ul class="list-disc ml-6 space-y-1">
+                  <li><strong>Patient Management</strong>: Complete patient registration and profile management</li>
+                  <li><strong>Appointment Scheduling</strong>: Advanced appointment booking with availability checking</li>
+                  <li><strong>Consultation Management</strong>: Digital consultation records with prescription management</li>
+                  <li><strong>Queue Management</strong>: Real-time patient queue tracking and status updates</li>
+                  <li><strong>Medicine Inventory</strong>: Complete medicine stock management and ordering system</li>
+                  <li><strong>Treatment Tracking</strong>: Medical treatment planning and progress monitoring</li>
+                  <li><strong>Billing System</strong>: Automated billing with invoice generation</li>
+                  <li><strong>Staff Management</strong>: Doctor and staff profile management</li>
+                  <li><strong>Comprehensive Reporting</strong>: Analytics and reports for all clinic operations</li>
+                  <li><strong>Medical Certificates</strong>: Digital MC generation and management</li>
+                </ul>
+
+                <h2 id="getting-started" class="font-bold text-lg mt-8 mb-3">2. Getting Started</h2>
+                
+                <h3 class="font-semibold mt-6 mb-2">System Requirements</h3>
+                <ul class="list-disc ml-6 space-y-1">
+                  <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                  <li>Internet connection</li>
+                  <li>JavaScript enabled</li>
+                  <li>Screen resolution: 1024x768 or higher</li>
+                </ul>
+
+                <h3 class="font-semibold mt-6 mb-2">Starting the Application</h3>
+                <ol class="list-decimal ml-6 space-y-1">
+                  <li>Open your web browser</li>
+                  <li>Navigate to the clinic management system URL</li>
+                  <li>You will see the login page</li>
+                  <li>Select your user type (Staff or Patient)</li>
+                  <li>Enter your credentials</li>
+                  <li>Click "Sign In" to access the system</li>
+                </ol>
+
+                <h2 id="authentication-login" class="font-bold text-lg mt-8 mb-3">3. Authentication & Login</h2>
+                
+                <div class="user-section">
+                  <h3 class="font-semibold mt-6 mb-2">Login Form</h3>
+                  
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">User Type Selection (*)</h4>
+                    <p><strong>Field Type:</strong> Radio Button</p>
+                    <p><strong>Description:</strong> Choose whether you are logging in as Staff or Patient</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Select "Staff" for admin and doctor access</li>
+                      <li>Select "Patient" for patient portal access</li>
+                    </ul>
+                    <p><strong>Validation:</strong> Must select one option</p>
+                  </div>
+
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">Username (*)</h4>
+                    <p><strong>Field Type:</strong> Text Input</p>
+                    <p><strong>Description:</strong> Your unique identifier for system access</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Staff: Enter your Staff ID (e.g., ST0001)</li>
+                      <li>Patient: Enter your Student ID</li>
+                      <li>Example: "ST0001" or "2023001234"</li>
+                    </ul>
+                    <p><strong>Validation:</strong> "Username is required"</p>
+                  </div>
+
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">Password (*)</h4>
+                    <p><strong>Field Type:</strong> Password Input</p>
+                    <p><strong>Description:</strong> Your account password</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Enter your assigned password</li>
+                      <li>Case-sensitive</li>
+                      <li>Example: "password123"</li>
+                    </ul>
+                    <p><strong>Validation:</strong> "Password is required"</p>
+                  </div>
+
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">Remember Me</h4>
+                    <p><strong>Field Type:</strong> Checkbox</p>
+                    <p><strong>Description:</strong> Keep you logged in for extended periods</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Check to stay logged in for 30 days</li>
+                      <li>Leave unchecked for 8-hour session</li>
+                    </ul>
+                    <p><strong>Validation:</strong> No validation required</p>
+                  </div>
+
+                  <h4 class="font-medium mt-4 mb-2">Process Steps:</h4>
+                  <ol class="list-decimal ml-6 space-y-1">
+                    <li>Select your user type (Staff or Patient)</li>
+                    <li>Enter your username in the appropriate format</li>
+                    <li>Enter your password</li>
+                    <li>Optionally check "Remember Me"</li>
+                    <li>Click "Sign In"</li>
+                    <li>Wait for authentication</li>
+                    <li>You will be redirected to your dashboard</li>
+                  </ol>
+                </div>
+
+                <h2 id="patient-management" class="font-bold text-lg mt-8 mb-3">4. Patient Management</h2>
+                
+                <div class="user-section">
+                  <h3 class="font-semibold mt-6 mb-2">Patient Registration Form</h3>
+                  
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">Patient Name (*)</h4>
+                    <p><strong>Field Type:</strong> Text Input</p>
+                    <p><strong>Description:</strong> Full name of the patient</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Enter first and last name</li>
+                      <li>Example: "John Smith"</li>
+                    </ul>
+                    <p><strong>Validation:</strong> "Patient name is required"</p>
+                  </div>
+
+                  <div class="field-description">
+                    <h4 class="font-medium mb-1">Gender (*)</h4>
+                    <p><strong>Field Type:</strong> Dropdown</p>
+                    <p><strong>Description:</strong> Patient's gender</p>
+                    <p><strong>Input Requirements:</strong></p>
+                    <ul class="list-disc ml-4">
+                      <li>Select from: Male, Female, Other</li>
+                      <li>Example: "Male"</li>
+                    </ul>
+                    <p><strong>Validation:</strong> "Please select a gender"</p>
+                  </div>
+                </div>
+
+                <h2 id="troubleshooting" class="font-bold text-lg mt-8 mb-3">12. Troubleshooting</h2>
+                
+                <h3 class="font-semibold mt-6 mb-2">Common Error Messages</h3>
+                
+                <div class="field-description">
+                  <h4 class="font-medium mb-1">"Please select a valid patient from the list"</h4>
+                  <p><strong>Cause:</strong> Patient not found in system or invalid selection</p>
+                  <p><strong>Solution:</strong> Search for patient by name or ID, ensure patient exists in system</p>
+                  <p><strong>Occurs in:</strong> Appointment creation, consultation management</p>
+                </div>
+
+                <div class="field-description">
+                  <h4 class="font-medium mb-1">"No available time slots for this date"</h4>
+                  <p><strong>Cause:</strong> All time slots are fully booked for selected date</p>
+                  <p><strong>Solution:</strong> Select a different date or check with staff for availability</p>
+                  <p><strong>Occurs in:</strong> Appointment scheduling</p>
+                </div>
+
+                <h2 id="faq" class="font-bold text-lg mt-8 mb-3">13. Frequently Asked Questions</h2>
+                
+                <h3 class="font-semibold mt-6 mb-2">Q: How do I reset my password?</h3>
+                <p class="mb-4"><strong>A:</strong> Contact your system administrator to reset your password. Passwords are stored securely in the database and cannot be reset through the user interface.</p>
+
+                <h3 class="font-semibold mt-6 mb-2">Q: Can I book appointments for the same day?</h3>
+                <p class="mb-4"><strong>A:</strong> No, appointments must be booked for future dates only. The system prevents same-day bookings to ensure proper scheduling.</p>
+
+                <h3 class="font-semibold mt-6 mb-2">Q: What happens if I exceed the medicine stock limit?</h3>
+                <p class="mb-4"><strong>A:</strong> The system will show an error message and prevent prescription creation. You must either reduce the quantity or create an order for more medicine.</p>
+
+                <div class="mt-12 pt-6 border-t border-gray-300 text-sm text-gray-600">
+                  <p><span class="font-semibold">Document Version:</span> 1.0</p>
+                  <p><span class="font-semibold">Last Updated:</span> December 2024</p>
+                  <p><span class="font-semibold">For Technical Support:</span> Contact your system administrator</p>
+                </div>
+
+                <div class="mt-8 text-center text-sm text-gray-500 italic">
+                  <p>This user manual provides comprehensive guidance for using the Clinic Management System. Always ensure you have proper access permissions when using the system.</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <aside id="aiSidebar" class="w-0 overflow-hidden bg-white border-l border-google-border shadow-xl flex flex-col editor-transition">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b border-google-border bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">User Guide Assistant</div>
+              <div class="text-xs opacity-80 truncate">Ready to help with user manual questions</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="aiCloseV2" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors" title="Close">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="flex-1 min-h-0 flex flex-col w-96">
+        <div id="aiMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="chat-bubble-ai p-3 max-w-[280px]">
+              <div class="text-sm text-gray-800">
+                👋 Hi! I'm your user manual assistant. I can help you understand how to use the clinic system, explain features, or guide you through specific tasks. What would you like to know?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-google-border bg-white flex-shrink-0">
+          <div class="relative mb-3">
+            <textarea id="aiInput" rows="1" class="w-full resize-none border border-google-border rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ask about system features..." style="min-height: 40px; max-height: 120px;"></textarea>
+            <button id="aiSend" class="absolute right-2 bottom-2 w-8 h-8 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center" title="Send message">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 gap-2 mb-3">
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              👤 How to register a new patient
+            </button>
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              📅 How to book appointments
+            </button>
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              🔐 Login troubleshooting
+            </button>
+          </div>
+          <button id="githubConnect" class="w-full flex items-center justify-center gap-2 px-2 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium" title="Connect GitHub">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+            </svg>
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Simple AI chat functionality for user manual
+    (function(){
+      const input = document.getElementById('aiInput');
+      const send = document.getElementById('aiSend');
+      const box = document.getElementById('aiMessages');
+      const panel = document.getElementById('aiSidebar');
+      const closeBtn = document.getElementById('aiCloseV2');
+      const openBtn = document.getElementById('aiOpenV2');
+      const githubBtn = document.getElementById('githubConnect');
+      const suggestions = document.querySelectorAll('.ai-suggestion');
+      
+      // Auto-resize textarea
+      function autoResize() {
+        input.style.height = 'auto';
+        const newHeight = Math.min(input.scrollHeight, 120);
+        input.style.height = newHeight + 'px';
+        
+        const lines = Math.ceil((newHeight - 16) / 20);
+        if (lines > 1) {
+          send.style.bottom = '10px';
+        } else {
+          send.style.bottom = '8px';
+        }
+      }
+      
+      // Add message to chat
+      function addMessage(type, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3 ' + (type === 'user' ? 'flex-row-reverse' : '');
+        
+        const avatar = document.createElement('div');
+        avatar.className = type === 'user' 
+          ? 'w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0'
+          : 'w-8 h-8 rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center flex-shrink-0';
+        avatar.innerHTML = type === 'user' 
+          ? '<span class="text-xs font-semibold text-gray-600">You</span>'
+          : '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        
+        const bubble = document.createElement('div');
+        bubble.className = type === 'user' ? 'chat-bubble-user text-white p-3 max-w-[280px]' : 'chat-bubble-ai p-3 max-w-[280px]';
+        
+        const content = document.createElement('div');
+        content.className = 'text-sm';
+        content.innerHTML = text;
+        
+        bubble.appendChild(content);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        box.appendChild(messageDiv);
+        box.scrollTop = box.scrollHeight;
+      }
+      
+      // Send message
+      function onSend() {
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        input.value = '';
+        autoResize();
+        
+        // User manual specific responses
+        setTimeout(() => {
+          let response = '';
+          if (text.includes('patient') && text.includes('register')) {
+            response = '👤 To register a new patient:<br/>1. Navigate to Patient Management<br/>2. Click "Add New Patient"<br/>3. Fill in required fields (name, gender, contact)<br/>4. Add emergency contact info<br/>5. List any allergies<br/>6. Click "Save Patient"';
+          } else if (text.includes('appointment') || text.includes('book')) {
+            response = '📅 To book an appointment:<br/>1. Go to Appointment Management<br/>2. Click "Create New Appointment"<br/>3. Search and select patient<br/>4. Choose future date<br/>5. Select available time slot<br/>6. Add description if needed<br/>7. Click "Create Appointment"';
+          } else if (text.includes('login') || text.includes('password')) {
+            response = '🔐 Login troubleshooting:<br/>• Check user type selection (Staff/Patient)<br/>• Verify username format<br/>• Ensure password is correct<br/>• Contact admin for password reset<br/>• Enable JavaScript in browser';
+          } else if (text.includes('medicine') || text.includes('prescription')) {
+            response = '💊 For medicine management:<br/>• Select medicine from dropdown<br/>• Enter dosage and quantity<br/>• Check stock availability<br/>• Add instructions<br/>• Save prescription';
+          } else {
+            response = '🏥 I can help with various clinic system features:<br/>• Patient registration<br/>• Appointment booking<br/>• Login issues<br/>• Medicine management<br/>• Billing procedures<br/><br/>What specific feature would you like help with?';
+          }
+          addMessage('ai', response);
+        }, 500);
+      }
+      
+      // Event listeners
+      input.addEventListener('input', autoResize);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      });
+      send.addEventListener('click', onSend);
+      
+      // Suggestion buttons
+      suggestions.forEach(btn => {
+        btn.addEventListener('click', () => {
+          input.value = btn.textContent.replace('👤 ', '').replace('📅 ', '').replace('🔐 ', '');
+          onSend();
+        });
+      });
+      
+      // Open/Close sidebar
+      if (openBtn && panel) {
+        openBtn.addEventListener('click', () => {
+          panel.classList.remove('w-0');
+          panel.classList.add('w-96');
+          openBtn.style.display = 'none';
+          setTimeout(() => input.focus(), 300);
+        });
+      }
+      
+      if (closeBtn && panel) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('w-96');
+          panel.classList.add('w-0');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+        });
+      }
+      
+      if (githubBtn) {
+        githubBtn.addEventListener('click', () => {
+          addMessage('ai', '🔗 GitHub integration ready! This can sync user documentation with your development workflow.');
+        });
+      }
+      
+      autoResize();
+    })();
+  </script>
+</body>
+</html>

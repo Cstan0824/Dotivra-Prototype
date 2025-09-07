@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Editor V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+            'times': ['Times New Roman', 'serif']
+          },
+          colors: {
+            'google-blue': '#1a73e8',
+            'google-blue-dark': '#1557b0',
+            'google-gray': '#5f6368',
+            'google-gray-dark': '#3c4043',
+            'google-gray-light': '#f1f3f4',
+            'google-border': '#e8eaed',
+            'google-bg': '#f9fbfd'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .document-shadow { box-shadow: 0 0 15px rgba(0,0,0,0.08); }
+    .toolbar-btn{ transition: all .15s ease; }
+    .toolbar-btn:hover{ background-color:#f1f3f4 !important; }
+    .editor-transition { transition: width 0.3s ease; }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-ai {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 18px 18px 18px 4px;
+    }
+    .comment-container {
+      animation: slideInRight 0.3s ease-out;
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes blink{ 50%{ opacity: 0 } }
+    @keyframes pulse { 
+      0%, 100% { opacity: 1; transform: scale(1); } 
+      50% { opacity: 0.7; transform: scale(1.1); } 
+    }
+    .editing-highlight {
+      background: linear-gradient(90deg, rgba(255,193,7,0.15), rgba(255,193,7,0.05)) !important;
+      border-left: 3px solid #ffc107 !important;
+      padding-left: 8px !important;
+      transition: all 0.3s ease !important;
+    }
+    .editing-indicator {
+      position: absolute;
+      background: #e91e63;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      z-index: 20;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="flex-1 flex flex-col bg-white editor-transition" id="editorSection">
+      <!-- Header -->
+      <div id="topHeader" class="bg-white border-b border-google-border">
+        <div class="px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-google-blue text-white flex items-center justify-center text-sm font-semibold">D</div>
+            <input id="docTitle" class="text-sm md:text-base font-medium text-google-gray-dark bg-transparent border-b border-transparent focus:border-google-blue focus:outline-none px-1" value="Report" />
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="shareBtn" class="inline-flex items-center gap-2 px-4 py-2 bg-google-blue text-white text-sm rounded-full hover:bg-google-blue-dark">
+              Share
+            </button>
+            <div class="flex -space-x-2" id="avatarGroup">
+              <div class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Alice Johnson">AJ</div>
+              <div class="w-8 h-8 rounded-full bg-teal-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Bob Smith">BS</div>
+              <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Carol Wilson">CW</div>
+            </div>
+            <button id="aiOpenV2" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              AI Assistant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbars (shortened for brevity) -->
+      <div class="bg-white border-b border-google-border px-4 py-1">
+        <div class="flex items-center gap-1">
+          <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">File</button>
+          <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Edit</button>
+          <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">View</button>
+        </div>
+      </div>
+
+      <!-- Document -->
+      <div class="flex-1 overflow-auto bg-google-bg px-4 py-8 md:px-12 lg:px-16 relative">
+        <div class="mx-auto bg-white document-shadow w-[816px] min-h-[1056px] relative">
+          <div id="page" class="font-times text-gray-900" style="padding: 72px 64px; font-size: 12pt; line-height: 1.5;">
+            <h1 class="text-center font-semibold mb-2">Clinic Management System — Developer Manual (Template)</h1>
+            
+            <h2 class="font-semibold mt-6 mb-2">1. System Overview</h2>
+            <ul class="list-disc ml-6">
+              <li><span class="font-semibold">Purpose:</span> A clinic management system to streamline patient care, appointments, and administrative tasks in a healthcare environment.</li>
+              <li><span class="font-semibold">Scope:</span> Patient management, appointment scheduling, billing, medical records, staff management, and reporting capabilities.</li>
+              <li><span class="font-semibold">Capabilities:</span> Patient registration | Staff management | Inventory tracking | Consultation scheduling | Billing & payments | Medical records | Reporting & analytics</li>
+              <li><span class="font-semibold">Tech Stack:</span> Java 17, Jakarta EE 10, JPA/Hibernate, MySQL 8.0, JSP/CSS, Maven, Docker, RESTful APIs</li>
+              <li><span class="font-semibold">Target Users:</span> Healthcare administrators, doctors, nurses, reception staff, and billing personnel</li>
+            </ul>
+
+            <h2 class="font-semibold mt-6 mb-2">2. Architecture Overview</h2>
+            <p class="mb-4">The system follows a layered architecture pattern with clear separation of concerns, ensuring maintainability, scalability, and testability.</p>
+            
+            <h3 class="font-semibold mt-4 mb-2">2.1 System Architecture</h3>
+            <ul class="list-disc ml-6 mb-4">
+              <li><span class="font-semibold">Presentation Layer:</span> JSP pages with responsive CSS for user interface</li>
+              <li><span class="font-semibold">Business Logic Layer:</span> Jakarta EE services and enterprise beans</li>
+              <li><span class="font-semibold">Data Access Layer:</span> JPA/Hibernate entities and repositories</li>
+              <li><span class="font-semibold">Database Layer:</span> MySQL 8.0 with optimized schemas</li>
+            </ul>
+
+            <h3 class="font-semibold mt-4 mb-2">2.2 Security Architecture</h3>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Role-based access control (RBAC) for different user types</li>
+              <li>HTTPS encryption for all communications</li>
+              <li>Input validation and SQL injection prevention</li>
+              <li>Session management with timeout controls</li>
+              <li>HIPAA compliance for patient data protection</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">3. Core Modules</h2>
+            
+            <h3 class="font-semibold mt-4 mb-2">3.1 Patient Management Module</h3>
+            <p class="mb-2"><span class="font-semibold">Purpose:</span> Handle patient registration, profile management, and medical history tracking.</p>
+            <p class="mb-2"><span class="font-semibold">Key Features:</span></p>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Patient registration with demographic information</li>
+              <li>Medical history and allergy tracking</li>
+              <li>Insurance information management</li>
+              <li>Emergency contact details</li>
+              <li>Patient search and filtering capabilities</li>
+            </ul>
+
+            <h3 class="font-semibold mt-4 mb-2">3.2 Appointment Scheduling Module</h3>
+            <p class="mb-2"><span class="font-semibold">Purpose:</span> Manage appointment booking, rescheduling, and calendar integration.</p>
+            <p class="mb-2"><span class="font-semibold">Key Features:</span></p>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Real-time appointment scheduling</li>
+              <li>Doctor availability management</li>
+              <li>Appointment reminders via email/SMS</li>
+              <li>Conflict detection and resolution</li>
+              <li>Waiting list management</li>
+            </ul>
+
+            <h3 class="font-semibold mt-4 mb-2">3.3 Medical Records Module</h3>
+            <p class="mb-2"><span class="font-semibold">Purpose:</span> Electronic health records (EHR) management and documentation.</p>
+            <p class="mb-2"><span class="font-semibold">Key Features:</span></p>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Digital medical record creation and storage</li>
+              <li>Prescription management</li>
+              <li>Lab results integration</li>
+              <li>Treatment history tracking</li>
+              <li>Medical imaging support</li>
+            </ul>
+
+            <h3 class="font-semibold mt-4 mb-2">3.4 Billing and Payment Module</h3>
+            <p class="mb-2"><span class="font-semibold">Purpose:</span> Handle billing, invoicing, and payment processing.</p>
+            <p class="mb-2"><span class="font-semibold">Key Features:</span></p>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Automated invoice generation</li>
+              <li>Insurance claim processing</li>
+              <li>Payment tracking and receipts</li>
+              <li>Outstanding balance management</li>
+              <li>Financial reporting</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">4. Database Design</h2>
+            <p class="mb-4">The database follows a normalized structure with proper relationships and constraints to ensure data integrity.</p>
+
+            <h3 class="font-semibold mt-4 mb-2">4.1 Core Entities</h3>
+            <ul class="list-disc ml-6 mb-4">
+              <li><span class="font-semibold">Patient:</span> Demographics, contact info, medical history</li>
+              <li><span class="font-semibold">Doctor:</span> Staff information, specializations, schedules</li>
+              <li><span class="font-semibold">Appointment:</span> Scheduling data, status, notes</li>
+              <li><span class="font-semibold">MedicalRecord:</span> Diagnoses, treatments, prescriptions</li>
+              <li><span class="font-semibold">Invoice:</span> Billing information, payments, insurance</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">5. API Documentation</h2>
+            <p class="mb-4">RESTful API endpoints for integration with external systems and mobile applications.</p>
+
+            <h3 class="font-semibold mt-4 mb-2">5.1 Patient APIs</h3>
+            <ul class="list-disc ml-6 mb-4">
+              <li><code>GET /api/patients</code> - Retrieve patient list</li>
+              <li><code>POST /api/patients</code> - Create new patient</li>
+              <li><code>GET /api/patients/{id}</code> - Get patient details</li>
+              <li><code>PUT /api/patients/{id}</code> - Update patient information</li>
+              <li><code>DELETE /api/patients/{id}</code> - Archive patient record</li>
+            </ul>
+
+            <h3 class="font-semibold mt-4 mb-2">5.2 Appointment APIs</h3>
+            <ul class="list-disc ml-6 mb-4">
+              <li><code>GET /api/appointments</code> - List appointments</li>
+              <li><code>POST /api/appointments</code> - Schedule appointment</li>
+              <li><code>PUT /api/appointments/{id}</code> - Reschedule appointment</li>
+              <li><code>DELETE /api/appointments/{id}</code> - Cancel appointment</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">6. Deployment Guide</h2>
+            <p class="mb-4">Step-by-step deployment instructions for different environments.</p>
+
+            <h3 class="font-semibold mt-4 mb-2">6.1 Development Environment</h3>
+            <ol class="list-decimal ml-6 mb-4">
+              <li>Install Java 17 JDK</li>
+              <li>Set up MySQL 8.0 database</li>
+              <li>Configure application.properties</li>
+              <li>Run Maven build: <code>mvn clean install</code></li>
+              <li>Deploy to local server</li>
+            </ol>
+
+            <h3 class="font-semibold mt-4 mb-2">6.2 Production Deployment</h3>
+            <ol class="list-decimal ml-6 mb-4">
+              <li>Build Docker image: <code>docker build -t clinic-app .</code></li>
+              <li>Set up production database</li>
+              <li>Configure environment variables</li>
+              <li>Deploy with Docker Compose</li>
+              <li>Set up SSL certificates</li>
+              <li>Configure load balancer</li>
+            </ol>
+
+            <h2 class="font-semibold mt-8 mb-2">7. Security Considerations</h2>
+            <ul class="list-disc ml-6 mb-4">
+              <li><span class="font-semibold">Data Encryption:</span> All sensitive data encrypted at rest and in transit</li>
+              <li><span class="font-semibold">Access Control:</span> Role-based permissions for different user types</li>
+              <li><span class="font-semibold">Audit Logging:</span> Comprehensive logging of all system activities</li>
+              <li><span class="font-semibold">Compliance:</span> HIPAA and healthcare data protection standards</li>
+              <li><span class="font-semibold">Backup Strategy:</span> Daily automated backups with offsite storage</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">8. Testing Strategy</h2>
+            <ul class="list-disc ml-6 mb-4">
+              <li><span class="font-semibold">Unit Testing:</span> JUnit 5 for individual component testing</li>
+              <li><span class="font-semibold">Integration Testing:</span> API endpoint and database integration tests</li>
+              <li><span class="font-semibold">Performance Testing:</span> Load testing for concurrent user scenarios</li>
+              <li><span class="font-semibold">Security Testing:</span> Vulnerability assessments and penetration testing</li>
+              <li><span class="font-semibold">User Acceptance Testing:</span> End-to-end workflow validation</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">9. Maintenance and Support</h2>
+            <p class="mb-4">Guidelines for ongoing system maintenance and user support.</p>
+            <ul class="list-disc ml-6 mb-4">
+              <li>Regular security updates and patches</li>
+              <li>Database optimization and performance monitoring</li>
+              <li>User training and documentation updates</li>
+              <li>24/7 technical support for critical issues</li>
+              <li>Quarterly system health reviews</li>
+            </ul>
+
+            <h2 class="font-semibold mt-8 mb-2">10. Future Enhancements</h2>
+            <ul class="list-disc ml-6">
+              <li>Mobile application for patients and staff</li>
+              <li>AI-powered diagnosis assistance</li>
+              <li>Telemedicine integration</li>
+              <li>Advanced analytics and reporting dashboards</li>
+              <li>Integration with wearable health devices</li>
+              <li>Multi-language support</li>
+            </ul>
+          </div>
+
+          <!-- Comment Section Container -->
+          <div id="commentSection" class="comment-container hidden absolute bg-white border border-google-border rounded-lg shadow-lg p-4 w-72" style="right: -300px; top: 120px; z-index: 20;">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-6 h-6 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center font-semibold">DM</div>
+              <div class="text-sm font-medium text-google-gray-dark">Diana Martinez</div>
+              <div class="text-xs text-google-gray ml-auto">1 min ago</div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="text-sm text-gray-700 mb-2">
+                "Can we enhance this section with more detailed API documentation and include authentication flow examples?"
+              </div>
+              <div class="text-xs text-google-gray bg-gray-50 rounded px-2 py-1">
+                💡 AI Enhancement Request: System Overview
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-end mt-2">
+              <button id="commentSubmit" class="px-3 py-1 text-xs bg-google-blue text-white rounded hover:bg-google-blue-dark transition-colors">
+                Submit to AI
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <aside id="aiSidebar" class="w-0 overflow-hidden bg-white border-l border-google-border shadow-xl flex flex-col editor-transition">
+      <div class="px-4 py-3 border-b border-google-border bg-gradient-to-r from-google-blue to-blue-600 text-white">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">AI Assistant</div>
+              <div class="text-xs opacity-80 truncate">Ready to help with your document</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="aiCloseV2" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors" title="Close">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 min-h-0 flex flex-col w-96">
+        <div id="aiMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="chat-bubble-ai p-3 max-w-[280px]">
+              <div class="text-sm text-gray-800">
+                👋 Hello! I'm your AI writing assistant. How can I help you today?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-google-border bg-white flex-shrink-0">
+          <div class="relative mb-3">
+            <textarea id="aiInput" rows="1" class="w-full resize-none border border-google-border rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent" placeholder="Type your message..." style="min-height: 40px; max-height: 120px;"></textarea>
+            <button id="aiSend" class="absolute right-2 bottom-2 w-8 h-8 bg-google-blue text-white rounded-md hover:bg-google-blue-dark transition-colors flex items-center justify-center" title="Send message">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SINGLE Edit Lock Modal -->
+  <div id="editLockOverlay" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-50"></div>
+  <div id="editLockModal" class="hidden fixed z-50 inset-0 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl border border-google-border w-[480px]">
+      <div class="px-5 py-4 border-b border-google-border flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center text-white">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-google-gray-dark">Section locked</div>
+          <div class="text-xs text-google-gray">Another user is editing this selection</div>
+        </div>
+      </div>
+      
+      <!-- Initial state -->
+      <div id="lockInitialState" class="px-5 py-4">
+        <p class="text-sm text-gray-700 mb-3">
+          <span class="font-medium">Carol</span> is currently editing this section. You can't edit here right now.
+        </p>
+        <p class="text-sm text-gray-600 mb-4">
+          Want to suggest a change? Enter your prompt and we'll handle it ASAP.
+        </p>
+        <div class="flex items-center justify-end gap-2">
+          <button id="lockDismiss" class="px-3 py-2 text-sm rounded-lg border border-google-border hover:bg-google-gray-light">
+            Cancel
+          </button>
+          <button id="lockEnterPrompt" class="px-4 py-2 text-sm rounded-lg bg-google-blue text-white hover:bg-google-blue-dark">
+            Enter your prompt
+          </button>
+        </div>
+      </div>
+
+      <!-- Prompt input state -->
+      <div id="lockPromptState" class="hidden px-5 py-4">
+        <div class="mb-4">
+          <label for="lockPromptInput" class="block text-sm font-medium text-gray-700 mb-2">
+            What changes would you like to make?
+          </label>
+          <textarea 
+            id="lockPromptInput" 
+            rows="3" 
+            class="w-full border border-google-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent resize-none" 
+            placeholder="e.g., Change the tech stack from Tailwind to Bootstrap, update the architecture diagram..."
+          ></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2">
+          <button id="lockPromptBack" class="px-3 py-2 text-sm rounded-lg border border-google-border hover:bg-google-gray-light">
+            Back
+          </button>
+          <button id="lockPromptSubmit" class="px-4 py-2 text-sm rounded-lg bg-google-blue text-white hover:bg-google-blue-dark disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            Submit prompt
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Toast -->
+  <div id="promptSubmittedToast" class="hidden fixed bottom-6 right-6 z-50 bg-green-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+    </svg>
+    <span>Your prompt submitted! We'll handle it ASAP.</span>
+  </div>
+
+  <script>
+    // Initialize title from URL
+    (function(){
+      const p = new URLSearchParams(location.search);
+      const t = p.get('template') || p.get('name');
+      if (t) { 
+        const el = document.getElementById('docTitle'); 
+        if (el) el.value = t; 
+      }
+    })();
+
+    // AI chat functionality
+    (function(){
+      const input = document.getElementById('aiInput');
+      const send = document.getElementById('aiSend');
+      const box = document.getElementById('aiMessages');
+      const panel = document.getElementById('aiSidebar');
+      const closeBtn = document.getElementById('aiCloseV2');
+      const openBtn = document.getElementById('aiOpenV2');
+      
+      function addMessage(type, text) {
+        if (!box) return;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3 ' + (type === 'user' ? 'flex-row-reverse' : '');
+        
+        messageDiv.innerHTML = `
+          <div class="w-8 h-8 rounded-full ${type === 'user' ? 'bg-gray-300' : 'bg-gradient-to-br from-google-blue to-blue-600'} flex items-center justify-center flex-shrink-0">
+            ${type === 'user' ? '<span class="text-xs font-semibold text-gray-600">You</span>' : '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'}
+          </div>
+          <div class="${type === 'user' ? 'chat-bubble-user text-white' : 'chat-bubble-ai'} p-3 max-w-[280px]">
+            <div class="text-sm ${type === 'user' ? '' : 'text-gray-800'}">${text}</div>
+          </div>
+        `;
+        
+        box.appendChild(messageDiv);
+        box.scrollTop = box.scrollHeight;
+      }
+      
+      function onSend() {
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        input.value = '';
+        
+        setTimeout(() => {
+          addMessage('ai', 'Thanks for your message! I can help you with writing and editing tasks.');
+        }, 500);
+      }
+      
+      if (input && send) {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            onSend();
+          }
+        });
+        send.addEventListener('click', onSend);
+      }
+      
+      if (openBtn && panel) {
+        openBtn.addEventListener('click', () => {
+          panel.classList.remove('w-0');
+          panel.classList.add('w-96');
+          openBtn.style.display = 'none';
+          setTimeout(() => { if (input) input.focus(); }, 300);
+        });
+      }
+      
+      if (closeBtn && panel) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('w-96');
+          panel.classList.add('w-0');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+        });
+      }
+    })();
+
+    // Comment section management - FIXED FLOW
+    (function(){
+      const commentSection = document.getElementById('commentSection');
+      const commentSubmit = document.getElementById('commentSubmit');
+      
+      window.showCommentSection = function() {
+        if (commentSection) {
+          commentSection.classList.remove('hidden');
+        }
+      };
+
+      if (commentSubmit) {
+        commentSubmit.addEventListener('click', () => {
+          const suggestionText = "Can we enhance this section with more detailed API documentation and include authentication flow examples?";
+          
+          // Open AI sidebar if not already open
+          const aiSidebar = document.getElementById('aiSidebar');
+          const aiMessages = document.getElementById('aiMessages');
+          const openBtn = document.getElementById('aiOpenV2');
+          
+          if (aiSidebar && aiSidebar.classList.contains('w-0')) {
+            aiSidebar.classList.remove('w-0');
+            aiSidebar.classList.add('w-96');
+            if (openBtn) openBtn.style.display = 'none';
+          }
+          
+          // Add Diana's comment to AI chat first
+          if (aiMessages) {
+            const dianaMessageDiv = document.createElement('div');
+            dianaMessageDiv.className = 'flex items-start gap-3 flex-row-reverse';
+            
+            dianaMessageDiv.innerHTML = `
+              <div class="w-8 h-8 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center flex-shrink-0">
+                <span class="font-semibold">DM</span>
+              </div>
+              <div class="chat-bubble-user text-white p-3 max-w-[280px]">
+                <div class="text-sm">${suggestionText}</div>
+              </div>
+            `;
+            
+            aiMessages.appendChild(dianaMessageDiv);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+            
+            // AI response to Diana's comment after a short delay
+            setTimeout(() => {
+              const aiResponseDiv = document.createElement('div');
+              aiResponseDiv.className = 'flex items-start gap-3';
+              
+              aiResponseDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="chat-bubble-ai p-3 max-w-[280px]">
+                  <div class="text-sm text-gray-800">
+                    Great suggestion, Diana! I can help enhance the System Overview section with:
+                    <ul class="mt-2 text-xs text-gray-600 space-y-1">
+                      <li>• Detailed API endpoint documentation</li>
+                      <li>• Authentication flow diagrams</li>
+                      <li>• Request/response examples</li>
+                      <li>• Security best practices</li>
+                    </ul>
+                    Would you like me to start with the API documentation?
+                  </div>
+                </div>
+              `;
+              
+              aiMessages.appendChild(aiResponseDiv);
+              aiMessages.scrollTop = aiMessages.scrollHeight;
+            }, 1000);
+          }
+          
+          // Show success state for comment section
+          commentSection.innerHTML = `
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+              </div>
+              <div class="text-sm font-medium text-green-700">Submitted to AI!</div>
+            </div>
+            <div class="text-xs text-gray-600 mb-3">Enhancement request sent to AI assistant.</div>
+          `;
+          
+          setTimeout(() => {
+            if (commentSection) commentSection.classList.add('hidden');
+          }, 3000);
+        });
+      }
+    })();
+
+    // Carol's editing simulation
+    (function(){
+      const page = document.getElementById('page');
+      if (!page) return;
+
+      function findTechStackLi() {
+        const items = page.querySelectorAll('li');
+        for (const li of items) {
+          if (li.textContent.trim().startsWith('Tech Stack:')) {
+            return li;
+          }
+        }
+        return null;
+      }
+
+      function simulateEditing() {
+        document.querySelectorAll('.editing-indicator').forEach(el => el.remove());
+        document.querySelectorAll('.editing-highlight').forEach(el => {
+          el.classList.remove('editing-highlight');
+        });
+
+        const techStackLi = findTechStackLi();
+        if (!techStackLi) return;
+
+        techStackLi.classList.add('editing-highlight');
+        
+        const indicator = document.createElement('div');
+        indicator.className = 'editing-indicator';
+        indicator.innerHTML = `
+          <div style="width: 6px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+          Carol is editing
+        `;
+        
+        const rect = techStackLi.getBoundingClientRect();
+        const pageRect = page.getBoundingClientRect();
+        
+        indicator.style.left = (rect.left - pageRect.left + 10) + 'px';
+        indicator.style.top = (rect.top - pageRect.top - 30) + 'px';
+        
+        page.appendChild(indicator);
+      }
+
+      simulateEditing();
+      
+      setInterval(() => {
+        const isCurrentlyEditing = document.querySelector('.editing-highlight');
+        if (isCurrentlyEditing) {
+          document.querySelectorAll('.editing-indicator').forEach(el => el.remove());
+          document.querySelectorAll('.editing-highlight').forEach(el => {
+            el.classList.remove('editing-highlight');
+          });
+        } else {
+          simulateEditing();
+        }
+      }, 4000 + Math.random() * 2000);
+    })();
+
+    // SINGLE Edit lock modal script
+    (function(){
+      const page = document.getElementById('page');
+      const overlay = document.getElementById('editLockOverlay');
+      const modal = document.getElementById('editLockModal');
+      const initialState = document.getElementById('lockInitialState');
+      const promptState = document.getElementById('lockPromptState');
+      const promptInput = document.getElementById('lockPromptInput');
+      const btnDismiss = document.getElementById('lockDismiss');
+      const btnEnterPrompt = document.getElementById('lockEnterPrompt');
+      const btnPromptBack = document.getElementById('lockPromptBack');
+      const btnPromptSubmit = document.getElementById('lockPromptSubmit');
+      const promptToast = document.getElementById('promptSubmittedToast');
+
+      if (!page || !overlay || !modal) return;
+
+      // Create remote indicators
+      const remoteLayer = document.createElement('div');
+      remoteLayer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;';
+      
+      const remoteBlock = document.createElement('div');
+      remoteBlock.style.cssText = 'position:absolute;background:linear-gradient(90deg,rgba(33,150,243,0.12),rgba(33,150,243,0.05));border:1px dashed rgba(26,115,232,0.35);border-radius:6px;display:none;';
+      
+      const remoteCaret = document.createElement('div');
+      remoteCaret.style.cssText = 'position:absolute;width:2px;height:1.25em;background:#06b6d4;box-shadow:0 0 0 2px rgba(6,182,212,0.2);border-radius:1px;animation:blink 1s step-end infinite;display:none;';
+      
+      const remoteBadge = document.createElement('div');
+      remoteBadge.style.cssText = 'position:absolute;transform:translateY(-160%);background:white;border:1px solid #e8eaed;border-radius:9999px;padding:2px 8px;font-size:12px;color:#3c4043;box-shadow:0 4px 16px rgba(0,0,0,0.08);display:none;';
+      remoteBadge.textContent = 'Carol is typing…';
+
+      page.style.position = 'relative';
+      page.appendChild(remoteLayer);
+      remoteLayer.appendChild(remoteBlock);
+      remoteLayer.appendChild(remoteCaret);
+      remoteLayer.appendChild(remoteBadge);
+
+      let lockedRange = null;
+      let typingTimer = null;
+      let dots = 0;
+
+      function showRemoteIndicators(range) {
+        const rect = range.getBoundingClientRect();
+        const host = page.getBoundingClientRect();
+        const pad = 2;
+        
+        remoteBlock.style.left = (rect.left - host.left - pad) + 'px';
+        remoteBlock.style.top = (rect.top - host.top - pad) + 'px';
+        remoteBlock.style.width = (rect.width + pad*2) + 'px';
+        remoteBlock.style.height = (rect.height + pad*2) + 'px';
+        remoteBlock.style.display = 'block';
+
+        const endRect = range.getClientRects().length ? range.getClientRects()[range.getClientRects().length - 1] : rect;
+        remoteCaret.style.left = (endRect.right - host.left) + 'px';
+        remoteCaret.style.top = (endRect.top - host.top) + 'px';
+        remoteCaret.style.display = 'block';
+
+        remoteBadge.style.left = (endRect.right - host.left + 6) + 'px';
+        remoteBadge.style.top = (endRect.top - host.top) + 'px';
+        remoteBadge.style.display = 'block';
+
+        clearInterval(typingTimer);
+        typingTimer = setInterval(() => {
+          dots = (dots + 1) % 4;
+          remoteBadge.textContent = 'Carol is typing' + '.'.repeat(dots);
+        }, 450);
+      }
+
+      function hideRemoteIndicators() {
+        remoteBlock.style.display = 'none';
+        remoteCaret.style.display = 'none';
+        remoteBadge.style.display = 'none';
+        clearInterval(typingTimer);
+      }
+
+      function showInitialState() {
+        if (initialState) initialState.classList.remove('hidden');
+        if (promptState) promptState.classList.add('hidden');
+        if (promptInput) promptInput.value = '';
+        if (btnPromptSubmit) btnPromptSubmit.disabled = true;
+      }
+
+      function showPromptState() {
+        if (initialState) initialState.classList.add('hidden');
+        if (promptState) promptState.classList.remove('hidden');
+        setTimeout(() => {
+          if (promptInput) promptInput.focus();
+        }, 100);
+      }
+
+      function showModal() {
+        showInitialState();
+        overlay.classList.remove('hidden');
+        modal.classList.remove('hidden');
+        page.style.userSelect = 'none';
+        page.style.pointerEvents = 'none';
+      }
+
+      function hideModal() {
+        overlay.classList.add('hidden');
+        modal.classList.add('hidden');
+        page.style.userSelect = '';
+        page.style.pointerEvents = '';
+        const sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+        lockedRange = null;
+        hideRemoteIndicators();
+      }
+
+      function updateSubmitButton() {
+        if (!promptInput || !btnPromptSubmit) return;
+        const hasText = promptInput.value.trim().length > 0;
+        btnPromptSubmit.disabled = !hasText;
+      }
+
+      // Event listeners
+      page.addEventListener('mouseup', function() {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return;
+        const range = sel.getRangeAt(0);
+        if (!page.contains(range.commonAncestorContainer)) return;
+        lockedRange = range.cloneRange();
+
+        showRemoteIndicators(lockedRange);
+        setTimeout(showModal, 800);
+      });
+
+      if (overlay) overlay.addEventListener('click', hideModal);
+      if (btnDismiss) btnDismiss.addEventListener('click', hideModal);
+      if (btnEnterPrompt) btnEnterPrompt.addEventListener('click', showPromptState);
+      if (btnPromptBack) btnPromptBack.addEventListener('click', showInitialState);
+
+      if (promptInput) {
+        promptInput.addEventListener('input', updateSubmitButton);
+        promptInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && btnPromptSubmit && !btnPromptSubmit.disabled) {
+            e.preventDefault();
+            btnPromptSubmit.click();
+          }
+        });
+      }
+
+      if (btnPromptSubmit) {
+        btnPromptSubmit.addEventListener('click', function() {
+          if (!promptInput) return;
+          const promptText = promptInput.value.trim();
+          if (!promptText) return;
+
+          console.log('User prompt submitted:', promptText);
+          
+          if (promptToast) {
+            promptToast.classList.remove('hidden');
+            setTimeout(() => promptToast.classList.add('hidden'), 3000);
+          }
+          
+          hideModal();
+
+          // REMOVED: AI response here - now only comment section appears
+          setTimeout(() => {
+            if (window.showCommentSection) {
+              window.showCommentSection();
+            }
+          }, 1500);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

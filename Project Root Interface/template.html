@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Developer Templates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'inter': ['Inter', 'system-ui', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+      .template-preview {
+        transition: all 0.2s ease;
+      }
+      .template-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      }
+    </style>
+  </head>
+  <body class="font-inter bg-gray-50 text-gray-800">
+    <!-- App Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <div class="text-xl font-semibold text-blue-600">
+          <i class="fas fa-folder-open mr-2"></i>Dotivra
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-700">John Doe</span>
+          <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
+        </div>
+      </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-6 pb-16">
+      <div class="flex items-end justify-between gap-4 py-6">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">Templates</h1>
+          <p class="text-gray-600 text-sm mt-1">Choose a template to kickstart your project documentation</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-center mb-6">
+        <div class="flex-1">
+          <label for="searchInput" class="sr-only">Search templates</label>
+          <input id="searchInput" type="text" placeholder="Search templates..."
+                 class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="roleFilter" class="sr-only">Filter by role</label>
+          <select id="roleFilter" class="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="all">All roles</option>
+            <option value="developer">Developer</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Role Sections -->
+      <div id="roleSections" class="space-y-8">
+        <!-- Developer -->
+        <section data-section-role="developer">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Developer (5 templates)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- API Template -->
+            <div data-card data-role="developer" data-title="API Template" data-desc="endpoints specifications responses" data-template="api" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-blue-50 to-indigo-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-code text-2xl text-blue-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">API Documentation</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">API Template</h4>
+                <p class="text-sm text-gray-600 mb-3">API endpoints, specifications, and response formats.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Commit-Log -->
+            <div data-card data-role="developer" data-title="Commit-Log" data-desc="version control changes history" data-template="commit-log" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-purple-50 to-pink-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-code-branch text-2xl text-purple-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">Version Control</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">Commit-Log</h4>
+                <p class="text-sm text-gray-600 mb-3">Track version control changes and commit history.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Developer Manual Documentation -->
+            <div data-card data-role="developer" data-title="Developer Manual Documentation" data-desc="development guide setup procedures" data-template="developer-manual" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-green-50 to-emerald-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-book-open text-2xl text-green-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">Developer Guide</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">Developer Manual Documentation</h4>
+                <p class="text-sm text-gray-600 mb-3">Comprehensive development guide and setup procedures.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- SRS Documentation -->
+            <div data-card data-role="developer" data-title="SRS Documentation" data-desc="requirements specifications system design" data-template="srs" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-orange-50 to-red-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-file-contract text-2xl text-orange-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">Requirements Spec</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">SRS Documentation</h4>
+                <p class="text-sm text-gray-600 mb-3">Software Requirements Specification and system design.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- System Overview Summary -->
+            <div data-card data-role="developer" data-title="System Overview Summary" data-desc="architecture overview components summary" data-template="system-overview" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-yellow-50 to-amber-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-chart-line text-2xl text-yellow-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">System Overview</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">System Overview Summary</h4>
+                <p class="text-sm text-gray-600 mb-3">High-level system architecture and component overview.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- User -->
+        <section data-section-role="user">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">User (1 template)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- User Manual only -->
+            <div data-card data-role="user" data-title="User Manual" data-desc="guide instructions how-to" data-template="user-manual" class="template-preview group border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer">
+              <div class="h-32 bg-gradient-to-br from-indigo-50 to-blue-100 border-b border-gray-100 p-4 flex items-center justify-center">
+                <div class="text-center">
+                  <i class="fas fa-book text-2xl text-indigo-600 mb-2"></i>
+                  <div class="text-xs text-gray-600">User Guide</div>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-medium text-gray-900 mb-2">User Manual</h4>
+                <p class="text-sm text-gray-600 mb-3">Comprehensive guide for end users.</p>
+                <button class="use-template-btn inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <span>Use Template</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Add Document Modal -->
+    <div id="addDocumentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Add Document</h2>
+            <p class="text-sm text-gray-600 mt-1">Create a new document using <span id="selectedTemplateName" class="font-medium"></span></p>
+          </div>
+          <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-6">
+          <!-- Project Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">Project Selection</label>
+            <div class="space-y-3">
+              <label class="flex items-center">
+                <input type="radio" name="projectType" value="existing" class="mr-3 text-blue-600">
+                <span class="text-sm text-gray-700">Add to existing project</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="projectType" value="new" class="mr-3 text-blue-600" checked>
+                <span class="text-sm text-gray-700">Create new project</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Existing Project Selection -->
+          <div id="existingProjectSection" class="hidden">
+            <label for="existingProject" class="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
+            <select id="existingProject" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Choose a project...</option>
+              <option value="clinic">Clinic Management System</option>
+              <option value="bank">Bank Management System</option>
+            </select>
+          </div>
+
+          <!-- New Project Section -->
+          <div id="newProjectSection">
+            <div class="space-y-4">
+              <div>
+                <label for="projectName" class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                <input id="projectName" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., E-commerce Platform" />
+              </div>
+              
+              <div>
+                <label for="githubLink" class="block text-sm font-medium text-gray-700 mb-2">GitHub Repository (Optional)</label>
+                <input id="githubLink" type="url" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://github.com/username/repository" />
+              </div>
+              
+              <div>
+                <label for="projectDesc" class="block text-sm font-medium text-gray-700 mb-2">Project Description *</label>
+                <textarea id="projectDesc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="Brief description of your project..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Name -->
+          <div>
+            <label for="documentName" class="block text-sm font-medium text-gray-700 mb-2">Document Name *</label>
+            <input id="documentName" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., User Authentication API" />
+          </div>
+
+          <!-- Selected Template Display -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-file-alt text-blue-600"></i>
+              <div>
+                <h4 class="text-sm font-medium text-blue-800">Selected Template</h4>
+                <p id="templateDisplay" class="text-sm text-blue-700"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
+          <button id="createDocumentBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Create Document
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const searchInput = document.getElementById('searchInput');
+        const roleFilter = document.getElementById('roleFilter');
+        const sections = Array.from(document.querySelectorAll('section[data-section-role]'));
+        const modal = document.getElementById('addDocumentModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const createDocumentBtn = document.getElementById('createDocumentBtn');
+        const projectTypeRadios = document.querySelectorAll('input[name="projectType"]');
+        const existingProjectSection = document.getElementById('existingProjectSection');
+        const newProjectSection = document.getElementById('newProjectSection');
+        
+        let selectedTemplate = null;
+        let selectedTemplateTitle = '';
+
+        function applyFilters() {
+          const term = (searchInput.value || '').trim().toLowerCase();
+          const selectedRole = (roleFilter.value || 'all').toLowerCase();
+
+          sections.forEach(section => {
+            const sectionRole = section.dataset.sectionRole;
+            const cards = Array.from(section.querySelectorAll('[data-card]'));
+            let anyVisible = false;
+
+            cards.forEach(card => {
+              const haystack = `${card.dataset.title || ''} ${card.dataset.desc || ''}`.toLowerCase();
+              const matchesText = term === '' || haystack.includes(term);
+              const matchesRole = selectedRole === 'all' || card.dataset.role === selectedRole;
+              const show = matchesText && matchesRole;
+              card.style.display = show ? '' : 'none';
+              if (show) anyVisible = true;
+            });
+
+            section.style.display = anyVisible ? '' : 'none';
+          });
+        }
+
+        // Project type toggle
+        function updateProjectSections() {
+          const selectedType = document.querySelector('input[name="projectType"]:checked').value;
+          if (selectedType === 'existing') {
+            existingProjectSection.classList.remove('hidden');
+            newProjectSection.classList.add('hidden');
+          } else {
+            existingProjectSection.classList.add('hidden');
+            newProjectSection.classList.remove('hidden');
+          }
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', applyFilters);
+        roleFilter.addEventListener('change', applyFilters);
+        
+        projectTypeRadios.forEach(radio => {
+          radio.addEventListener('change', updateProjectSections);
+        });
+
+        // Template selection
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('.use-template-btn');
+          if (!btn) return;
+          
+          e.preventDefault();
+          const card = btn.closest('[data-card]');
+          selectedTemplate = card.dataset.template;
+          selectedTemplateTitle = card.dataset.title;
+          
+          document.getElementById('selectedTemplateName').textContent = selectedTemplateTitle;
+          document.getElementById('templateDisplay').textContent = selectedTemplateTitle;
+          
+          modal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        });
+
+        // Close modal
+        function hideModal() {
+          modal.classList.add('hidden');
+          document.body.style.overflow = 'auto';
+          // Reset form
+          document.getElementById('projectName').value = '';
+          document.getElementById('githubLink').value = '';
+          document.getElementById('projectDesc').value = '';
+          document.getElementById('documentName').value = '';
+          document.getElementById('existingProject').value = '';
+          document.querySelector('input[name="projectType"][value="new"]').checked = true;
+          updateProjectSections();
+        }
+
+        closeModal.addEventListener('click', hideModal);
+        cancelBtn.addEventListener('click', hideModal);
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) hideModal();
+        });
+
+        // Create document
+        createDocumentBtn.addEventListener('click', () => {
+          const projectType = document.querySelector('input[name="projectType"]:checked').value;
+          const documentName = document.getElementById('documentName').value.trim();
+          
+          if (!documentName) {
+            alert('Please enter a document name');
+            return;
+          }
+
+          if (projectType === 'existing') {
+            const existingProject = document.getElementById('existingProject').value;
+            if (!existingProject) {
+              alert('Please select an existing project');
+              return;
+            }
+            
+            // Route to existing project
+            if (existingProject === 'clinic') {
+              window.location.href = '../Clinic Project/clinic-document-list.html';
+            } else if (existingProject === 'bank') {
+              window.location.href = '../Bank Project/bank-document-list.html';
+            }
+          } else {
+            // New project
+            const projectName = document.getElementById('projectName').value.trim();
+            const projectDesc = document.getElementById('projectDesc').value.trim();
+            
+            if (!projectName || !projectDesc) {
+              alert('Please fill in all required fields');
+              return;
+            }
+            
+            // For now, route to a default location - you can customize this
+            alert(`New project "${projectName}" will be created with ${selectedTemplateTitle} template`);
+            // TODO: Implement new project creation logic
+          }
+        });
+
+        // Initial setup
+        applyFilters();
+        updateProjectSections();
+      })();
+    </script>
+    
+  </body>
+  </html>

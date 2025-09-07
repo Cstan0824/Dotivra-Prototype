@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Overview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { inter: ['Inter', 'system-ui', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+      transition: all 0.3s ease;
+    }
+    
+    .modal-content {
+      transform: scale(0.95);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-backdrop.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+    
+    .template-option {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .template-option:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .template-option.selected {
+      border-color: #374151;
+      box-shadow: 0 0 0 2px rgba(55, 65, 81, 0.2);
+      background-color: #f9fafb;
+    }
+    
+    .template-option.selected::after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      width: 20px;
+      height: 20px;
+      background: #374151;
+      border-radius: 0 8px 0 8px;
+    }
+    
+    .template-option.selected::before {
+      content: '✓';
+      position: absolute;
+      top: 1px;
+      right: 3px;
+      color: white;
+      font-size: 12px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="text-xl font-semibold text-blue-600">
+        <i class="fas fa-folder-open mr-2"></i>Dotivra
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-gray-700">John Doe</span>
+        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Template Section Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-lg font-normal text-gray-800">Start a new project</h1>
+      <a href="template.html" class="template-gallery-btn bg-transparent border border-gray-300 rounded-full px-4 py-2 text-sm text-blue-600 hover:bg-gray-50 hover:border-blue-600 transition-all flex items-center gap-2">
+        Template gallery
+        <i class="fas fa-expand-arrows-alt"></i>
+      </a>
+    </div>
+
+    <!-- Templates Grid -->
+    <div class="mb-10">
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <!-- Blank Document → Add Project -->
+        <div class="template-card cursor-pointer text-center group" id="addProjectBtn">
+          <div class="w-full h-40 border-2 border-gray-300 rounded bg-gray-50 mb-2 flex items-center justify-center group-hover:border-blue-600 transition-all">
+            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl">
+              <i class="fas fa-plus"></i>
+            </div>
+          </div>
+          <span class="block text-sm text-gray-800 mb-1">Add project</span>
+        </div>
+
+        <!-- Report Template -->
+        <div class="template-card cursor-pointer text-center group" data-template="clinic-report">
+          <div class="w-full h-40 border-2 border-gray-300 rounded bg-white mb-2 overflow-hidden group-hover:border-blue-600 transition-all">
+            <div class="p-2 text-xs">
+              <div class="font-bold mb-1 text-gray-800">CLINIC REPORT</div>
+              <div class="text-gray-600 mb-1" style="font-size: 5px;">DEVELOPER MANUAL</div>
+              <div class="w-full h-5 bg-gray-400 mb-1 rounded-sm"></div>
+              <div class="space-y-1">
+                <div class="h-px bg-gray-300"></div>
+                <div class="h-px bg-gray-300 w-3/5"></div>
+                <div class="h-px bg-gray-300"></div>
+              </div>
+            </div>
+          </div>
+          <span class="block text-sm text-gray-800 mb-1">Clinic Report</span>
+          <span class="block text-xs text-gray-500">Developer Manual</span>
+        </div>
+
+        <!-- Bank System Template -->
+        <div class="template-card cursor-pointer text-center group" data-template="bank-system">
+          <div class="w-full h-40 border-2 border-gray-300 rounded bg-white mb-2 overflow-hidden group-hover:border-blue-600 transition-all">
+            <div class="p-2 text-xs">
+              <div class="text-gray-800 mb-1" style="font-size: 5px;">BANKING SYSTEM</div>
+              <div class="font-bold mb-1 text-gray-800" style="font-size: 8px;">DOCUMENTATION</div>
+              <div class="text-gray-600 mb-1" style="font-size: 5px;">JAVA SWING APPLICATION</div>
+              <div class="w-full h-4 bg-gray-400 mb-1 rounded-sm"></div>
+              <div class="space-y-1">
+                <div class="h-px bg-gray-300"></div>
+                <div class="h-px bg-gray-300 w-4/5"></div>
+                <div class="h-px bg-gray-300"></div>
+              </div>
+            </div>
+          </div>
+          <span class="block text-sm text-gray-800 mb-1">Bank System</span>
+          <span class="block text-xs text-gray-500">Java Documentation</span>
+        </div>
+
+        <!-- Presentation Template -->
+        <div class="template-card cursor-pointer text-center group">
+          <div class="w-full h-40 border-2 border-gray-300 rounded bg-white mb-2 overflow-hidden group-hover:border-blue-600 transition-all">
+            <div class="p-2 text-xs">
+              <div class="font-bold mb-1 text-gray-800">PRESENTATION</div>
+              <div class="text-gray-600 mb-1" style="font-size: 5px;">SLIDE DECK TEMPLATE</div>
+              <div class="w-full h-4 bg-gray-100 mb-1 rounded-sm p-1 flex flex-col gap-1">
+                <div class="h-0.5 bg-gray-500 w-4/5 rounded"></div>
+                <div class="h-0.5 bg-gray-500 w-1/2 rounded"></div>
+              </div>
+              <div class="space-y-1">
+                <div class="h-px bg-gray-300 w-3/5"></div>
+                <div class="h-px bg-gray-300 w-4/5"></div>
+              </div>
+            </div>
+          </div>
+          <span class="block text-sm text-gray-800 mb-1">Presentation</span>
+          <span class="block text-xs text-gray-500">Modern</span>
+        </div>
+
+        <!-- Resume Template -->
+        <div class="template-card cursor-pointer text-center group">
+          <div class="w-full h-40 border-2 border-gray-300 rounded bg-white mb-2 overflow-hidden group-hover:border-blue-600 transition-all">
+            <div class="p-2 text-xs">
+              <div class="font-bold mb-1 text-gray-800">JOHN DOE</div>
+              <div class="text-gray-600 mb-1" style="font-size: 5px;">SOFTWARE ENGINEER</div>
+              <div class="space-y-1 mb-1">
+                <div class="h-px bg-gray-300"></div>
+                <div class="h-px bg-gray-300 w-3/5"></div>
+              </div>
+              <div class="space-y-1">
+                <div class="h-px bg-gray-300"></div>
+                <div class="h-px bg-gray-300 w-4/5"></div>
+                <div class="h-px bg-gray-300 w-3/5"></div>
+              </div>
+            </div>
+          </div>
+          <span class="block text-sm text-gray-800 mb-1">Resume</span>
+          <span class="block text-xs text-gray-500">Professional</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Divider -->
+    <div class="h-px bg-gray-200 my-10"></div>
+
+    <!-- Recent Documents Section -->
+    <h2 class="text-lg font-normal text-gray-800 mb-2">Recent Project</h2>
+    <p class="text-gray-500 text-sm mb-8">Access your recent projects and collaborate with your team</p>
+
+    <!-- Controls -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div class="bg-white border border-gray-300 rounded-lg overflow-hidden flex">
+        <button class="view-btn flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white" data-view="list">
+          <i class="fas fa-list"></i>
+          List
+        </button>
+        <button class="view-btn flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:bg-gray-50" data-view="grid">
+          <i class="fas fa-th-large"></i>
+          Cards
+        </button>
+      </div>
+      <div class="relative w-full sm:w-80">
+        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        <input type="text" class="search-input w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" placeholder="Search projects..." />
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div id="list-view" class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+      <div class="grid grid-cols-4 gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <span>Project</span>
+        <span>Status</span>
+        <span>Team</span>
+        <span>Modified</span>
+      </div>
+
+      <!-- Clinic Management System -->
+      <a href="../Clinic Project/clinic-document-list.html" class="project-item grid grid-cols-4 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center text-decoration-none">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+            <i class="fas fa-stethoscope"></i>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-800">Clinic Management System</h3>
+          </div>
+        </div>
+        <div class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium uppercase tracking-wide rounded-full w-fit">Active</div>
+        <div class="flex items-center -space-x-1">
+          <div class="w-6 h-6 bg-red-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium" title="Alice Johnson">AJ</div>
+          <div class="w-6 h-6 bg-teal-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium" title="Bob Smith">BS</div>
+          <div class="w-6 h-6 bg-blue-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium" title="Carol Wilson">CW</div>
+          <div class="w-6 h-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 text-xs font-medium">+2</div>
+        </div>
+        <div class="text-sm text-gray-500">2 hours ago</div>
+      </a>
+
+      <!-- Bank Management System -->
+      <a href="../Bank Project/bank-document-list.html" class="project-item grid grid-cols-4 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center text-decoration-none">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white">
+            <i class="fas fa-university"></i>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-800">Bank Management System</h3>
+          </div>
+        </div>
+        <div class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium uppercase tracking-wide rounded-full w-fit">Draft</div>
+        <div class="flex items-center -space-x-1">
+          <div class="w-6 h-6 bg-pink-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium" title="David Lee">DL</div>
+          <div class="w-6 h-6 bg-cyan-300 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium" title="Emma Davis">ED</div>
+        </div>
+        <div class="text-sm text-gray-500">1 day ago</div>
+      </a>
+    </div>
+
+    <!-- Card View -->
+    <div id="grid-view" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 hidden">
+      <!-- Clinic Management System Card -->
+      <a href="../Clinic Project/clinic-document-list.html" class="project-card bg-white rounded-lg border border-gray-300 overflow-hidden hover:shadow-lg transition-all relative text-decoration-none">
+        <div class="absolute top-3 right-3 z-10">
+          <div class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium uppercase tracking-wide rounded-full">Active</div>
+        </div>
+        <div class="h-44 bg-gray-50 border-b border-gray-100 flex items-center justify-center"></div>
+        <div class="flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+            <i class="fas fa-stethoscope"></i>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-800">Clinic Management System</h3>
+            <div class="text-xs text-gray-500">2 hours ago</div>
+          </div>
+        </div>
+      </a>
+      
+      <!-- Bank Management System Card -->
+      <a href="project.html" class="project-card bg-white rounded-lg border border-gray-300 overflow-hidden hover:shadow-lg transition-all relative text-decoration-none">
+        <div class="absolute top-3 right-3 z-10">
+          <div class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium uppercase tracking-wide rounded-full">Draft</div>
+        </div>
+        <div class="h-44 bg-gray-50 border-b border-gray-100 flex items-center justify-center"></div>
+        <div class="flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white">
+            <i class="fas fa-university"></i>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-800">Bank Management System</h3>
+            <div class="text-xs text-gray-500">1 day ago</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Add Project Modal -->
+  <div id="addProjectModal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
+            <i class="fas fa-plus"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Create New Project</h2>
+            <p class="text-sm text-gray-500">Set up your project details and choose a template</p>
+          </div>
+        </div>
+        <button id="closeModal" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6">
+        <!-- Project Details Form -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-800 flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-600"></i>
+            Project Details
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="projectName" class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+              <input type="text" id="projectName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter project name" required>
+            </div>
+            
+            <div>
+              <label for="roleSelect" class="block text-sm font-medium text-gray-700 mb-2">Target Role *</label>
+              <select id="roleSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Select a role</option>
+                <option value="developer">Developer</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label for="githubRepo" class="block text-sm font-medium text-gray-700 mb-2">GitHub Repository Link</label>
+            <input type="url" id="githubRepo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://github.com/username/repo">
+          </div>
+          
+          <div>
+            <label for="projectDesc" class="block text-sm font-medium text-gray-700 mb-2">Project Description</label>
+            <textarea id="projectDesc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Describe your project..."></textarea>
+          </div>
+        </div>
+
+        <!-- Template Selection -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-medium text-gray-800 flex items-center gap-2">
+            <i class="fas fa-layer-group text-blue-600"></i>
+            Choose Template *
+          </h3>
+          
+          <div id="templateGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
+              Select a role to see available templates
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+        <div class="text-sm text-gray-500">
+          <span id="selectedTemplate">No template selected</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
+          <button id="createProjectBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+            Create Project
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Modal functionality
+    (function(){
+      const modal = document.getElementById('addProjectModal');
+      const openBtn = document.getElementById('addProjectBtn');
+      const closeBtn = document.getElementById('closeModal');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const createBtn = document.getElementById('createProjectBtn');
+      const projectNameInput = document.getElementById('projectName');
+      const roleSelect = document.getElementById('roleSelect');
+      const templateGrid = document.getElementById('templateGrid');
+      const selectedTemplateSpan = document.getElementById('selectedTemplate');
+      
+      let selectedTemplate = null;
+      
+      // Available templates for each role
+      function getAvailableTemplates() {
+        return {
+          developer: [
+            { id: 'api', name: 'API Documentation', desc: 'Define API endpoints and specifications', icon: 'fas fa-code' },
+            { id: 'commit-log', name: 'Commit Log', desc: 'Document commit history and changes', icon: 'fas fa-list-alt' },
+            { id: 'developer-manual', name: 'Developer Manual', desc: 'Complete development guide', icon: 'fas fa-book-open' },
+            { id: 'srs', name: 'SRS Documentation', desc: 'Software Requirements Specification', icon: 'fas fa-file-contract' },
+            { id: 'system-overview', name: 'System Overview', desc: 'System overview and architecture', icon: 'fas fa-sitemap' }
+          ],
+          user: [
+            { id: 'user-manual', name: 'User Manual', desc: 'Complete user guide and instructions', icon: 'fas fa-book' }
+          ]
+        };
+      }
+      
+      function updateTemplateGrid() {
+        const role = roleSelect.value;
+        if (!role) {
+          templateGrid.innerHTML = `
+            <div class="col-span-full flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
+              Select a role to see available templates
+            </div>
+          `;
+          return;
+        }
+        
+        const templates = getAvailableTemplates()[role] || [];
+        
+        templateGrid.innerHTML = templates.map(template => `
+          <div class="template-option cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-gray-400 hover:shadow-sm transition-all bg-white group relative" 
+               data-template-id="${template.id}">
+            <div class="flex flex-col items-center text-center">
+              <div class="w-12 h-12 bg-gray-100 rounded-lg mb-3 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                <i class="${template.icon} text-gray-600 text-lg"></i>
+              </div>
+              <h4 class="font-medium text-gray-800 text-sm mb-1">${template.name}</h4>
+              <p class="text-xs text-gray-500 leading-relaxed">${template.desc}</p>
+            </div>
+          </div>
+        `).join('');
+
+        // Add click handlers to template options
+        document.querySelectorAll('.template-option').forEach(option => {
+          option.addEventListener('click', () => {
+            document.querySelectorAll('.template-option').forEach(opt => {
+              opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+            selectedTemplate = option.dataset.templateId;
+            updateSelectedTemplate();
+          });
+        });
+
+        selectedTemplate = null;
+        updateSelectedTemplate();
+      }
+      
+      // Open modal
+      openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.add('show');
+        }, 10);
+        projectNameInput.focus();
+      });
+      
+      // Close modal
+      function closeModal() {
+        modal.classList.remove('show');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          // Reset form
+          document.getElementById('projectName').value = '';
+          document.getElementById('projectDesc').value = '';
+          document.getElementById('githubRepo').value = '';
+          roleSelect.value = '';
+          selectedTemplate = null;
+          updateSelectedTemplate();
+          updateTemplateGrid();
+        }, 300);
+      }
+      
+      closeBtn.addEventListener('click', closeModal);
+      cancelBtn.addEventListener('click', closeModal);
+      
+      // Close on backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+      
+      function updateSelectedTemplate() {
+        if (selectedTemplate) {
+          const templates = Object.values(getAvailableTemplates()).flat();
+          const template = templates.find(t => t.id === selectedTemplate);
+          selectedTemplateSpan.textContent = template ? template.name : selectedTemplate;
+          selectedTemplateSpan.className = 'text-sm text-blue-600 font-medium';
+        } else {
+          selectedTemplateSpan.textContent = 'No template selected';
+          selectedTemplateSpan.className = 'text-sm text-gray-500';
+        }
+        updateCreateButton();
+      }
+      
+      function updateCreateButton() {
+        const projectName = projectNameInput.value.trim();
+        const role = roleSelect.value;
+        const hasRequiredFields = projectName && role && selectedTemplate;
+        createBtn.disabled = !hasRequiredFields;
+      }
+      
+      // Update create button state
+      projectNameInput.addEventListener('input', updateCreateButton);
+      roleSelect.addEventListener('change', () => {
+        updateTemplateGrid();
+        updateCreateButton();
+      });
+      
+      // Create project
+      createBtn.addEventListener('click', () => {
+        const projectName = document.getElementById('projectName').value.trim();
+        const projectDesc = document.getElementById('projectDesc').value.trim();
+        const githubRepo = document.getElementById('githubRepo').value.trim();
+        const role = roleSelect.value;
+        
+        if (!projectName || !role || !selectedTemplate) {
+          alert('Please fill in all required fields and select a template.');
+          return;
+        }
+        
+        // Here you would normally send this data to your backend
+        console.log('Creating project:', {
+          name: projectName,
+          description: projectDesc,
+          githubRepo: githubRepo,
+          role: role,
+          template: selectedTemplate
+        });
+        
+        // For demo purposes, redirect based on template and role
+        const templateRoutes = {
+          'api': '../template/api-blank-temp.html',
+          'commit-log': '../template/commit-blank-template.html',
+          'developer-manual': '../template/developer-manual-temp.html',
+          'srs': '../template/srs-blank-template.html',
+          'system-overview': '../template/summary-blank-template.html',
+          'user-manual': '../template/blankTemplate.html'
+        };
+        
+        const route = templateRoutes[selectedTemplate] || '../template/emptyEditor.html';
+        const params = new URLSearchParams({
+          name: projectName,
+          description: projectDesc,
+          role: role,
+          template: selectedTemplate
+        });
+        
+        if (githubRepo) {
+          params.append('github', githubRepo);
+        }
+        
+        window.location.href = `${route}?${params.toString()}`;
+      });
+      
+      // Initialize
+      updateTemplateGrid();
+    })();
+
+    // Template card navigation (excluding Add Project button)
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.template-card');
+      if (!card || card.id === 'addProjectBtn') return;
+      e.preventDefault();
+      
+      const template = card.dataset.template;
+      
+      if (template === 'clinic-report') {
+        window.location.href = '../template/clinic-template.html?template=clinic-report&name=Clinic Management System Report';
+      } else if (template === 'bank-system') {
+        window.location.href = '../template/bank-management-editor.html?template=bank-system&name=Bank Management System Documentation';
+      } else {
+        window.location.href = '../template/emptyEditor.html';
+      }
+    });
+
+    // View toggle
+    (function(){
+      const viewButtons = document.querySelectorAll('.view-btn');
+      const listView = document.getElementById('list-view');
+      const gridView = document.getElementById('grid-view');
+      viewButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const view = btn.dataset.view;
+          viewButtons.forEach(b => {
+            b.classList.remove('bg-blue-600', 'text-white');
+            b.classList.add('text-gray-500');
+          });
+          btn.classList.remove('text-gray-500');
+          btn.classList.add('bg-blue-600', 'text-white');
+          
+          if (view === 'list') { 
+            listView.classList.remove('hidden'); 
+            gridView.classList.add('hidden'); 
+          } else { 
+            listView.classList.add('hidden'); 
+            gridView.classList.remove('hidden'); 
+          }
+        });
+      });
+    })();
+
+    // Search functionality
+    (function(){
+      const input = document.querySelector('.search-input');
+      if (!input) return;
+      input.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.project-item, .project-card').forEach(item => {
+          const titleEl = item.querySelector('h3');
+          const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+          item.style.display = title.includes(term) ? '' : 'none';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

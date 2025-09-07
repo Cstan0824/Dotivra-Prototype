@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Editor with AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+                        'times': ['Times New Roman', 'serif'],
+                    },
+                    boxShadow: { 'tab': 'inset 0 -2px 0 #1a73e8' },
+                    colors: {
+                        'google-blue': '#1a73e8',
+                        'google-blue-dark': '#1557b0',
+                        'google-gray': '#5f6368',
+                        'google-gray-dark': '#3c4043',
+                        'google-gray-light': '#f1f3f4',
+                        'google-border': '#e8eaed',
+                        'google-bg': '#f9fbfd',
+                        'google-chat-bg': '#fafbfc',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .chat-input:focus {
+            box-shadow: 0 0 0 1px #1a73e8;
+        }
+        .document-shadow {
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .toolbar-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .toolbar-btn:hover {
+            background-color: #f1f3f4 !important;
+        }
+        .toolbar-btn.active {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+        }
+        /* Custom select styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%235f6368' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+            background-size: 8px;
+            padding-right: 20px;
+            min-width: 80px;
+        }
+        
+        /* Remove default select styling issues */
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px #1a73e8;
+        }
+    </style>
+</head>
+  <body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+    <div class="flex h-screen relative">
+        <!-- Main Editor Section -->
+        <div class="flex-1 flex flex-col bg-white transition-all duration-300 ease-in-out" id="editorSection">
+            <!-- Header + Tabs (Docs-style) -->
+            <div class="bg-white border-b border-google-border shadow-sm">
+              <div id="editorHeaderBar" class="px-4 py-2 flex items-center justify-between">
+                <!-- Left: Logo + Title -->
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-google-blue text-white flex items-center justify-center text-sm font-semibold">D</div>
+                  <input id="docTitle" class="text-sm md:text-base font-medium text-google-gray-dark bg-transparent border-b border-transparent focus:border-google-blue focus:outline-none px-1" value="Untitled" />
+                </div>
+                <!-- Right: Presence + Share + AI -->
+                <div class="flex items-center gap-2">
+                  <div id="presence" class="flex -space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white text-white text-xs flex items-center justify-center" title="Alice Johnson">AJ</div>
+                    <div class="w-8 h-8 rounded-full bg-teal-500 border-2 border-white text-white text-xs flex items-center justify-center" title="Bob Smith">BS</div>
+                    <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white text-white text-xs flex items-center justify-center" title="Carol Wilson">CW</div>
+                    <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white text-gray-700 text-xs flex items-center justify-center" title="More">+2</div>
+                  </div>
+                  <button class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">Share</button>
+                  <button class="bg-google-blue text-white border-none px-3 md:px-4 py-1.5 md:py-2 rounded-full cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out flex items-center gap-2 hover:bg-google-blue-dark hover:shadow-md" id="aiToggleBtn">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/></svg>
+                    AI
+                  </button>
+                </div>
+              </div>
+              
+            </div>
+
+            <!-- App Menubar (static) -->
+            <div class="bg-white border-b border-google-border px-4 py-2 text-sm text-google-gray-dark">
+              <div class="flex items-center gap-4">
+                <button class="hover:text-black">File</button>
+                <button class="hover:text-black">Edit</button>
+                <button class="hover:text-black">View</button>
+                <button class="hover:text-black">Insert</button>
+                <button class="hover:text-black">Format</button>
+                <button class="hover:text-black">Tools</button>
+                <button class="hover:text-black">Extensions</button>
+                <button class="hover:text-black">Help</button>
+              </div>
+            </div>
+
+            <!-- Workspace: Sidebar + Editor -->
+            <div class="flex">
+              <!-- Left: Document tabs (static prototype) -->
+              <aside class="hidden md:flex w-64 shrink-0 bg-white border-r border-google-border flex-col">
+                <div class="px-4 py-3 flex items-center justify-between border-b border-google-border">
+                  <div class="text-sm text-gray-700">Document tabs</div>
+                  <button class="w-7 h-7 rounded-full border border-google-border text-gray-600 hover:bg-google-gray-light">+</button>
+                </div>
+                <div class="p-3 space-y-3">
+                  <div class="bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex items-center justify-between px-3 py-2">
+                      <div class="flex items-center gap-2 text-sm text-blue-700">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h7l5-5V5a2 2 0 00-2-2H4z"/></svg>
+                        Tab 1
+                      </div>
+                      <button class="text-gray-500">···</button>
+                    </div>
+                    <div class="pl-6 pr-3 pb-3 text-xs">
+                      <div class="border-l-2 border-blue-600 pl-3 py-1 text-blue-700">Title of Your Report</div>
+                      <div class="pl-3 py-1 text-gray-600">SECTION HEADER</div>
+                      <div class="pl-3 py-1 text-gray-600">CONCLUSION</div>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              <!-- Right: Toolbar, ruler and editor -->
+              <div class="flex-1 flex flex-col">
+                <!-- Google Docs Style Toolbar -->
+                <div class="bg-white border-b border-google-border px-6 py-2 shadow-sm">
+                  <div class="flex items-center justify-center space-x-1 max-w-6xl mx-auto">
+                    <!-- File Operations -->
+                    <div class="flex items-center space-x-1 border-r border-gray-300 pr-3 mr-3">
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Print" id="printBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zM5 14H4v-2h1v2zm1 0v2h8v-2H6zm10-2h-1v2h1v-2z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Undo" id="undoBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Redo" id="redoBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Zoom -->
+                    <div class="flex items-center space-x-1 border-r border-gray-300 pr-3 mr-3">
+                        <select class="text-sm border-none outline-none text-google-gray bg-white cursor-pointer" id="zoomSelect">
+                            <option value="75">75%</option>
+                            <option value="90">90%</option>
+                            <option value="100" selected>100%</option>
+                            <option value="125">125%</option>
+                            <option value="150">150%</option>
+                        </select>
+                    </div>
+
+                    <!-- Text Formatting -->
+                    <div class="flex items-center space-x-1 border-r border-gray-300 pr-3 mr-3">
+                        <select class="text-sm border-none outline-none mr-2 text-google-gray bg-white cursor-pointer" id="fontFamily">
+                            <option value="Arial" selected>Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Helvetica">Helvetica</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Verdana">Verdana</option>
+                        </select>
+                        <select class="text-sm border-none outline-none mr-2 text-google-gray bg-white cursor-pointer" id="fontSize">
+                            <option value="11">11</option>
+                            <option value="12" selected>12</option>
+                            <option value="14">14</option>
+                            <option value="16">16</option>
+                            <option value="18">18</option>
+                            <option value="24">24</option>
+                        </select>
+                        <button class="toolbar-btn p-2 rounded font-bold text-google-gray hover:bg-google-gray-light" title="Bold" id="boldBtn">B</button>
+                        <button class="toolbar-btn p-2 rounded italic text-google-gray hover:bg-google-gray-light" title="Italic" id="italicBtn">I</button>
+                        <button class="toolbar-btn p-2 rounded underline text-google-gray hover:bg-google-gray-light" title="Underline" id="underlineBtn">U</button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Text Color" id="textColorBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Highlight Color" id="highlightBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Paragraph -->
+                    <div class="flex items-center space-x-1 border-r border-gray-300 pr-3 mr-3">
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align Left" id="alignLeftBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Center" id="alignCenterBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M2 4a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM4 8a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 12a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM4 16a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align Right" id="alignRightBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M2 4a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM6 8a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zM2 12a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM6 16a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Justify" id="justifyBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Line Spacing" id="lineSpacingBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4h14v2H3V4zM3 10h14v2H3v-2zM3 16h14v2H3v-2z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Lists -->
+                    <div class="flex items-center space-x-1 border-r border-gray-300 pr-3 mr-3">
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bulleted List" id="bulletListBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 100 2 1 1 0 000-2zM6 5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zM3 9a1 1 0 100 2 1 1 0 000-2zM6 10a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zM3 14a1 1 0 100 2 1 1 0 000-2zM6 15a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Numbered List" id="numberedListBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Checklist" id="checklistBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Insert -->
+                    <div class="flex items-center space-x-1">
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert Link" id="linkBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert Image" id="imageBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert Table" id="tableBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 000 2v9a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2H3zm3 2v2h2V6H6zm4 0v2h2V6h-2zm2 4h-2v2h2v-2zm-4 0H6v2h2v-2z"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert Drawing" id="drawingBtn">
+                            <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+                  </div>
+                </div>
+
+                <!-- Ruler -->
+                <div class="bg-white border-b border-google-border">
+                  <div class="max-w-6xl mx-auto px-6 py-1 text-[10px] text-gray-500">
+                    <div class="relative h-5">
+                      <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-gray-300"></div>
+                      <div class="grid grid-cols-8 gap-0 h-full">
+                        <div class="flex items-end justify-center">1</div>
+                        <div class="flex items-end justify-center">2</div>
+                        <div class="flex items-end justify-center">3</div>
+                        <div class="flex items-end justify-center">4</div>
+                        <div class="flex items-end justify-center">5</div>
+                        <div class="flex items-end justify-center">6</div>
+                        <div class="flex items-end justify-center">7</div>
+                        <div class="flex items-end justify-center">8</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Editor Content -->
+                <div class="flex-1 flex flex-col bg-google-bg px-4 py-8 md:px-12 lg:px-16">
+                  <div class="mx-auto bg-white document-shadow min-h-full w-[816px]">
+                      <div 
+                          class="w-full h-full border-none resize-none outline-none font-times bg-white text-gray-900 text-base leading-relaxed min-h-screen"
+                          style="padding: 72px 64px; font-size: 12pt; line-height: 1.5; min-height: 1200px;"
+                          id="textEditor"
+                          contenteditable="true"
+                          data-placeholder="Start typing your document..."
+                      ></div>
+                  </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="bg-white px-5 py-2 text-xs text-google-gray border-t border-google-border">
+                    Ready • Last edit was a few seconds ago
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <!-- AI Chatbot Panel -->
+        <div class="w-96 bg-white fixed -right-96 top-0 h-screen shadow-xl transition-all duration-300 ease-in-out flex flex-col z-50 border-l border-google-border" id="chatbotPanel">
+            <!-- Compact Chatbot Header -->
+            <div class="bg-gradient-to-r from-google-blue to-blue-600 text-white px-4 py-3 flex justify-between items-center shadow-md">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold">AI Assistant</div>
+                        <div class="text-xs text-blue-100">Ready to help</div>
+                    </div>
+                </div>
+                <button class="bg-transparent border-none text-white text-xl cursor-pointer p-1 rounded-full transition-all duration-200 ease-in-out w-8 h-8 flex items-center justify-center hover:bg-white hover:bg-opacity-20" id="closeChatBtn">
+                    &times;
+                </button>
+            </div>
+
+            <!-- AI Features Toolbar -->
+            <div class="bg-white border-b border-google-border px-4 py-2">
+                <div class="flex gap-2 flex-wrap">
+                    <button class="flex items-center gap-1 px-3 py-1 bg-google-gray-light text-google-gray-dark text-xs rounded-full hover:bg-gray-200 transition-colors" id="githubRepoBtn">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                        </svg>
+                        GitHub
+                    </button>
+                    <button class="flex items-center gap-1 px-3 py-1 bg-google-gray-light text-google-gray-dark text-xs rounded-full hover:bg-gray-200 transition-colors" id="templatesBtn">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                        </svg>
+                        Templates
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Content - Copilot Style -->
+            <div class="flex-1 flex flex-col bg-white overflow-hidden">
+                <!-- Messages Container -->
+                <div class="flex-1 overflow-y-auto px-4 py-3" id="chatMessages">
+                    <!-- Welcome Message - Copilot Style -->
+                    <div class="mb-6">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900 mb-1">AI</div>
+                                <div class="text-sm text-gray-600 leading-relaxed">
+                                    <p class="mb-3">I'm here to help you write better documentation. I can:</p>
+                                    <ul class="space-y-1 text-xs text-gray-500">
+                                        <li>• Analyze and improve your writing</li>
+                                        <li>• Review uploaded files and suggest edits</li>
+                                        <li>• Help with code documentation</li>
+                                        <li>• Generate content from templates</li>
+                                    </ul>
+                                    <p class="mt-3 text-xs text-gray-500">
+                                        💡 <strong>Tip:</strong> Upload a file or ask me to help with specific sections of your document.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area - Copilot Style with File Upload -->
+                <div class="border-t border-gray-200 p-4">
+                    <div class="flex items-end gap-3">
+                        <div class="flex-1 relative">
+                            <!-- File Upload Area -->
+                            <div class="hidden mb-2" id="fileUploadArea">
+                                <div class="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M8 4a4 4 0 00-4 4v4a4 4 0 004 4h4a4 4 0 004-4V8a4 4 0 00-4-4H8zM7 9a1 1 0 012 0v2a1 1 0 11-2 0V9z"/>
+                                    </svg>
+                                    <span class="text-blue-700" id="fileUploadText">Drop files here or click to browse</span>
+                                    <button class="ml-auto text-blue-600 hover:text-blue-800" id="closeFileUpload">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Text Input with integrated controls -->
+                            <div class="relative border border-gray-300 rounded-lg focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500">
+                                <textarea 
+                                    class="w-full px-3 py-3 pr-20 border-none outline-none text-sm resize-none bg-transparent"
+                                    id="chatInput"
+                                    placeholder="Ask Copilot a question or type @ to upload files..."
+                                    rows="1"
+                                    style="min-height: 44px; max-height: 120px;"
+                                ></textarea>
+                                
+                                <!-- Input Controls -->
+                                <div class="absolute right-2 top-2 flex items-center gap-1">
+                                    <!-- File Upload Button -->
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" id="attachFileBtn" title="Attach file">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    <!-- Send Button -->
+                                    <button class="p-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" id="sendBtn" disabled>
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden File Input -->
+                            <input type="file" class="hidden" id="fileInput" multiple accept=".txt,.md,.js,.py,.html,.css,.json,.xml,.pdf,.docx">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Repo Modal -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-60 hidden items-center justify-center" id="githubModal">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Connect GitHub Repository</h3>
+                <input type="text" placeholder="Enter GitHub repo URL (e.g., owner/repo)" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4" id="githubInput">
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300" id="cancelGithub">Cancel</button>
+                    <button class="flex-1 bg-google-blue text-white px-4 py-2 rounded-lg hover:bg-google-blue-dark" id="confirmGithub">Connect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Modal -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-60 hidden items-center justify-center" id="templatesModal">
+            <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Choose a Template</h3>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="technical">
+                        <div class="font-medium text-sm">Technical Documentation</div>
+                        <div class="text-xs text-gray-600">API docs, user guides</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="research">
+                        <div class="font-medium text-sm">Research Paper</div>
+                        <div class="text-xs text-gray-600">Academic format</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="proposal">
+                        <div class="font-medium text-sm">Project Proposal</div>
+                        <div class="text-xs text-gray-600">Business plans</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="meeting">
+                        <div class="font-medium text-sm">Meeting Notes</div>
+                        <div class="text-xs text-gray-600">Structured notes</div>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300" id="cancelTemplates">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const aiToggleBtn = document.getElementById('aiToggleBtn');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+        const editorSection = document.getElementById('editorSection');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+
+        // Modal elements
+        const githubModal = document.getElementById('githubModal');
+        const templatesModal = document.getElementById('templatesModal');
+        
+        // Feature buttons
+        const githubRepoBtn = document.getElementById('githubRepoBtn');
+        const templatesBtn = document.getElementById('templatesBtn');
+
+        // File upload elements (integrated)
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const fileInput = document.getElementById('fileInput');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileUploadText = document.getElementById('fileUploadText');
+        const closeFileUpload = document.getElementById('closeFileUpload');
+
+        // GitHub elements
+        const githubInput = document.getElementById('githubInput');
+        const cancelGithub = document.getElementById('cancelGithub');
+        const confirmGithub = document.getElementById('confirmGithub');
+
+        // Template elements
+        const cancelTemplates = document.getElementById('cancelTemplates');
+        const templateBtns = document.querySelectorAll('.template-btn');
+
+        // Auto-resize textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        // Enable/disable send button based on input
+        function updateSendButton() {
+            const hasText = chatInput.value.trim().length > 0;
+            sendBtn.disabled = !hasText;
+        }
+
+        // Toggle chatbot panel
+        function toggleChatbot() {
+            const isOpen = chatbotPanel.classList.contains('right-0');
+            
+            if (isOpen) {
+                closeChatbot();
+            } else {
+                openChatbot();
+            }
+        }
+
+        function openChatbot() {
+            chatbotPanel.classList.remove('-right-96');
+            chatbotPanel.classList.add('right-0');
+            editorSection.classList.add('mr-96');
+            const headerBar = document.getElementById('editorHeaderBar');
+            if (headerBar) headerBar.classList.add('pr-96');
+            // Hide header AI button and mobile FAB while chat is open
+            if (aiToggleBtn) aiToggleBtn.classList.add('hidden');
+            const aiFab = document.getElementById('aiFab');
+            if (aiFab) aiFab.classList.add('hidden');
+            chatInput.focus();
+        }
+
+        function closeChatbot() {
+            chatbotPanel.classList.remove('right-0');
+            chatbotPanel.classList.add('-right-96');
+            editorSection.classList.remove('mr-96');
+            const headerBar = document.getElementById('editorHeaderBar');
+            if (headerBar) headerBar.classList.remove('pr-96');
+            // Restore header AI button and mobile FAB
+            if (aiToggleBtn) aiToggleBtn.classList.remove('hidden');
+            const aiFab = document.getElementById('aiFab');
+            if (aiFab) aiFab.classList.remove('hidden');
+        }
+
+        // Modal functions
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Feature event listeners
+        githubRepoBtn.addEventListener('click', () => showModal(githubModal));
+        templatesBtn.addEventListener('click', () => showModal(templatesModal));
+
+        // File upload functionality - integrated in input
+        attachFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Show file upload area when @ is typed
+        chatInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            autoResize(e.target);
+            updateSendButton();
+            
+            if (value.includes('@') && !fileUploadArea.classList.contains('hidden')) {
+                // Keep file upload area visible
+            } else if (value.includes('@')) {
+                showFileUploadArea();
+            }
+        });
+
+        function showFileUploadArea() {
+            fileUploadArea.classList.remove('hidden');
+            fileUploadText.textContent = 'Drop files here or click to browse';
+        }
+
+        function hideFileUploadArea() {
+            fileUploadArea.classList.add('hidden');
+        }
+
+        closeFileUpload.addEventListener('click', hideFileUploadArea);
+
+        // Drag and drop on the file upload area
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('bg-blue-100', 'border-blue-300');
+        });
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('bg-blue-100', 'border-blue-300');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // Also allow drag and drop on the entire chat input area
+        const inputContainer = chatInput.parentElement;
+        inputContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            showFileUploadArea();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                addMessage(`� ${file.name}`, 'file');
+                addMessage(`I've received your file "${file.name}". I can help you analyze, edit, or improve this document. What would you like me to do with it?`, 'ai');
+            });
+            hideFileUploadArea();
+            // Remove @ from input if it exists
+            chatInput.value = chatInput.value.replace('@', '');
+            updateSendButton();
+        }
+
+        // GitHub functionality
+        confirmGithub.addEventListener('click', () => {
+            const repoUrl = githubInput.value.trim();
+            if (repoUrl) {
+                addMessage(`Connected to GitHub: ${repoUrl}`, 'system');
+                addMessage(`I've connected to the repository "${repoUrl}". I can help you review code, suggest improvements, or generate documentation. What would you like to work on?`, 'ai');
+                githubInput.value = '';
+                hideModal(githubModal);
+            }
+        });
+
+        cancelGithub.addEventListener('click', () => hideModal(githubModal));
+
+        // Template functionality
+        templateBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const template = btn.dataset.template;
+                const templateName = btn.querySelector('.font-medium').textContent;
+                
+                const templates = {
+                    technical: `# Technical Documentation
+
+## Overview
+Brief description of the project or feature.
+
+## Requirements
+- Requirement 1
+- Requirement 2
+
+## Implementation
+Detailed implementation steps.
+
+## API Reference
+Document your APIs here.
+
+## Examples
+Code examples and usage.`,
+                    research: `# Research Paper Title
+
+## Abstract
+Brief summary of the research.
+
+## Introduction
+Background and problem statement.
+
+## Methodology
+Research methods and approach.
+
+## Results
+Findings and data analysis.
+
+## Discussion
+Interpretation of results.
+
+## Conclusion
+Summary and future work.
+
+## References
+Bibliography and citations.`,
+                    proposal: `# Project Proposal
+
+## Executive Summary
+Brief overview of the proposal.
+
+## Problem Statement
+What problem are we solving?
+
+## Proposed Solution
+How will we solve it?
+
+## Timeline
+Project milestones and deadlines.
+
+## Budget
+Cost breakdown and resources.
+
+## Expected Outcomes
+What we aim to achieve.`,
+                    meeting: `# Meeting Notes
+
+**Date:** ${new Date().toLocaleDateString()}
+**Attendees:** 
+**Duration:** 
+
+## Agenda
+1. Topic 1
+2. Topic 2
+3. Topic 3
+
+## Discussion Points
+- Point 1
+- Point 2
+
+## Action Items
+- [ ] Task 1 - Assignee
+- [ ] Task 2 - Assignee
+
+## Next Steps
+What happens next?`
+                };
+
+                document.getElementById('textEditor').value = templates[template];
+                addMessage(`Applied template: ${templateName}`, 'system');
+                addMessage(`I've applied the "${templateName}" template to your document. Feel free to customize it or ask me to help you fill in specific sections!`, 'ai');
+                hideModal(templatesModal);
+            });
+        });
+
+        cancelTemplates.addEventListener('click', () => hideModal(templatesModal));
+
+        // Chat functionality
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                chatInput.value = '';
+                autoResize(chatInput);
+                updateSendButton();
+                
+                // Enhanced AI responses
+                setTimeout(() => {
+                    const responses = [
+                        "I'd be happy to help you with that! Could you provide more details about what you're working on?",
+                        "Great question! Based on your document, I suggest we focus on improving the structure and clarity.",
+                        "I can help you with that. Would you like me to review your current content or suggest new ideas?",
+                        "That's an interesting approach. Let me help you refine that section for better readability.",
+                        "I notice you might benefit from a more structured format. Would you like me to suggest an outline?"
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage(randomResponse, 'ai');
+                }, 800);
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'system') {
+                messageDiv.className = 'mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        <span>${text}</span>
+                    </div>
+                `;
+            } else if (sender === 'file') {
+                messageDiv.className = 'mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M8 4a4 4 0 00-4 4v4a4 4 0 004 4h4a4 4 0 004-4V8a4 4 0 00-4-4H8zM7 9a1 1 0 012 0v2a1 1 0 11-2 0V9z"/>
+                        </svg>
+                        <span>${text}</span>
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'mb-4 flex items-start gap-3';
+                
+                const avatar = sender === 'user' 
+                    ? `<div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                         <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+                         </svg>
+                       </div>`
+                    : `<div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                         <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                         </svg>
+                       </div>`;
+                
+                messageDiv.innerHTML = `
+                    ${avatar}
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900 mb-1">${sender === 'user' ? 'You' : 'GitHub Copilot'}</div>
+                        <div class="text-sm text-gray-700 leading-relaxed">${text}</div>
+                    </div>
+                `;
+            }
+            
+            // Remove welcome message if it exists
+            const welcomeMsg = chatMessages.querySelector('.mb-6');
+            if (welcomeMsg && (sender === 'user' || sender === 'ai')) {
+                welcomeMsg.remove();
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Event listeners
+        aiToggleBtn.addEventListener('click', toggleChatbot);
+        closeChatBtn.addEventListener('click', closeChatbot);
+        const aiFab = document.getElementById('aiFab');
+        if (aiFab) aiFab.addEventListener('click', toggleChatbot);
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Initialize
+        updateSendButton();
+        // Title from URL only (static prototype)
+        (function(){
+          const params = new URLSearchParams(location.search);
+          const initialTitle = params.get('template') || params.get('name') || 'Untitled';
+          const docTitleInput = document.getElementById('docTitle');
+          if (docTitleInput) docTitleInput.value = initialTitle;
+        })();
+
+        // Close modals when clicking outside
+        [githubModal, templatesModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal(modal);
+                }
+            });
+        });
+
+        // Auto-resize text editor and handle window resize
+        // Keep editor visible on all sizes; chat floats on top
+        window.addEventListener('resize', () => {
+            editorSection.style.display = 'flex';
+        });
+
+        // Google Docs Toolbar Functionality
+        const textEditor = document.getElementById('textEditor');
+        
+        // Text formatting functions
+        function execCommand(command, value = null) {
+            document.execCommand(command, false, value);
+            textEditor.focus();
+        }
+
+        // Toolbar event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format buttons
+            const boldBtn = document.getElementById('boldBtn');
+            const italicBtn = document.getElementById('italicBtn');
+            const underlineBtn = document.getElementById('underlineBtn');
+            const alignLeftBtn = document.getElementById('alignLeftBtn');
+            const alignCenterBtn = document.getElementById('alignCenterBtn');
+            const alignRightBtn = document.getElementById('alignRightBtn');
+            const justifyBtn = document.getElementById('justifyBtn');
+            const bulletListBtn = document.getElementById('bulletListBtn');
+            const numberedListBtn = document.getElementById('numberedListBtn');
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            const linkBtn = document.getElementById('linkBtn');
+            const imageBtn = document.getElementById('imageBtn');
+            const fontFamily = document.getElementById('fontFamily');
+            const fontSize = document.getElementById('fontSize');
+
+            // Add event listeners
+            if (boldBtn) boldBtn.addEventListener('click', () => execCommand('bold'));
+            if (italicBtn) italicBtn.addEventListener('click', () => execCommand('italic'));
+            if (underlineBtn) underlineBtn.addEventListener('click', () => execCommand('underline'));
+            if (alignLeftBtn) alignLeftBtn.addEventListener('click', () => execCommand('justifyLeft'));
+            if (alignCenterBtn) alignCenterBtn.addEventListener('click', () => execCommand('justifyCenter'));
+            if (alignRightBtn) alignRightBtn.addEventListener('click', () => execCommand('justifyRight'));
+            if (justifyBtn) justifyBtn.addEventListener('click', () => execCommand('justifyFull'));
+            if (bulletListBtn) bulletListBtn.addEventListener('click', () => execCommand('insertUnorderedList'));
+            if (numberedListBtn) numberedListBtn.addEventListener('click', () => execCommand('insertOrderedList'));
+            if (undoBtn) undoBtn.addEventListener('click', () => execCommand('undo'));
+            if (redoBtn) redoBtn.addEventListener('click', () => execCommand('redo'));
+
+            if (linkBtn) linkBtn.addEventListener('click', () => {
+                const url = prompt('Enter URL:');
+                if (url) execCommand('createLink', url);
+            });
+
+            if (imageBtn) imageBtn.addEventListener('click', () => {
+                const url = prompt('Enter image URL:');
+                if (url) execCommand('insertImage', url);
+            });
+
+            if (fontFamily) fontFamily.addEventListener('change', (e) => {
+                execCommand('fontName', e.target.value);
+            });
+
+            if (fontSize) fontSize.addEventListener('change', (e) => {
+                execCommand('fontSize', e.target.value);
+            });
+
+            // Handle placeholder
+            function handlePlaceholder() {
+                if (textEditor.textContent.trim() === '') {
+                    textEditor.classList.add('empty');
+                } else {
+                    textEditor.classList.remove('empty');
+                }
+            }
+
+            textEditor.addEventListener('input', handlePlaceholder);
+            textEditor.addEventListener('focus', function() {
+                if (this.textContent.trim() === '') {
+                    this.classList.add('empty');
+                }
+            });
+            textEditor.addEventListener('blur', function() {
+                this.classList.remove('empty');
+            });
+
+            // Initialize placeholder
+            handlePlaceholder();
+        });
+
+    </script>
+
+    <!-- Add placeholder styling -->
+    <style>
+        #textEditor.empty:before {
+            content: attr(data-placeholder);
+            color: #9aa0a6;
+            font-style: italic;
+            pointer-events: none;
+        }
+        #textEditor:focus.empty:before {
+            content: '';
+        }
+    </style>
+
+    </script>
+
+    <!-- Floating Chat Toggle (mobile helper) -->
+    <button id="aiFab" class="sm:hidden fixed bottom-4 right-4 z-50 bg-google-blue text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/></svg>
+    </button>
+</body>
+</html>

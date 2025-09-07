@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Document</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+            'times': ['Times New Roman', 'serif']
+          },
+          colors: {
+            'google-blue': '#1a73e8',
+            'google-blue-dark': '#1557b0',
+            'google-gray': '#5f6368',
+            'google-gray-dark': '#3c4043',
+            'google-gray-light': '#f1f3f4',
+            'google-border': '#e8eaed',
+            'google-bg': '#f9fbfd'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .document-shadow { box-shadow: 0 0 15px rgba(0,0,0,0.08); }
+    .toolbar-btn{ transition: all .15s ease; }
+    .toolbar-btn:hover{ background-color:#f1f3f4 !important; }
+    .editor-transition { transition: width 0.3s ease; }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-ai {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 18px 18px 18px 4px;
+    }
+    .blinking-cursor {
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="flex-1 flex flex-col bg-white editor-transition">
+      <!-- Header -->
+      <div class="bg-white border-b border-google-border">
+        <div class="px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+              <span id="docIcon">D</span>
+            </div>
+            <input id="docTitle" class="text-sm md:text-base font-medium text-google-gray-dark bg-transparent border-b border-transparent focus:border-google-blue focus:outline-none px-1" value="Untitled Document" />
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="inline-flex items-center gap-2 px-4 py-2 bg-google-blue text-white text-sm rounded-full hover:bg-google-blue-dark">
+              Share
+            </button>
+            <div class="flex -space-x-2">
+              <div class="w-8 h-8 rounded-full bg-green-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="You">ME</div>
+            </div>
+            <button id="aiOpenV2" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              AI Assistant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main workspace -->
+      <div class="flex min-h-0 flex-1">
+        <!-- Editor Area -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <!-- Google Docs Style Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-1">
+            <div class="flex items-center gap-1">
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">File</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Edit</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">View</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Insert</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Format</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Tools</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Extensions</button>
+              <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Help</button>
+            </div>
+          </div>
+
+          <!-- Formatting Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-2">
+            <div class="flex items-center gap-1">
+              <!-- Undo/Redo -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Undo (Ctrl+Z)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Redo (Ctrl+Y)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Print (Ctrl+P)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Zoom -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Zoom">
+                <option>100%</option>
+                <option>125%</option>
+                <option>150%</option>
+                <option>200%</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Styles -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[120px]" title="Styles">
+                <option>Normal text</option>
+                <option>Title</option>
+                <option>Subtitle</option>
+                <option>Heading 1</option>
+                <option>Heading 2</option>
+                <option>Heading 3</option>
+              </select>
+
+              <!-- Font Family -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[140px]" title="Font">
+                <option>Times New Roman</option>
+                <option>Arial</option>
+                <option>Calibri</option>
+                <option>Georgia</option>
+                <option>Verdana</option>
+              </select>
+
+              <!-- Font Size -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Font size">
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option selected>12</option>
+                <option>14</option>
+                <option>16</option>
+                <option>18</option>
+                <option>24</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Text Formatting -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bold (Ctrl+B)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M8 4h3a3 3 0 010 6H8zM8 10h4a3 3 0 010 6H8z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Italic (Ctrl+I)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4h6v2h-2.586l-3.828 8H16v2H8v-2h2.586l3.828-8H10z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Underline (Ctrl+U)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4h2v5a3 3 0 006 0V4h2v5a5 5 0 11-10 0V4zM4 16h12v2H4z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Text color">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Alignment -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align left (Ctrl+Shift+L)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM3 7h10v2H3zM3 10h14v2H3zM3 13h10v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align center (Ctrl+Shift+E)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM5 7h10v2H5zM3 10h14v2H3zM5 13h10v2H5z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align right (Ctrl+Shift+R)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM7 7h10v2H7zM3 10h14v2H3zM7 13h10v2H7z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Lists -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bulleted list (Ctrl+Shift+8)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4h10v2H7zM3 4h2v2H3zM7 9h10v2H7zM3 9h2v2H3zM7 14h10v2H7zM3 14h2v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Numbered list (Ctrl+Shift+7)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h1v5H3zM5 4h12v2H5zM3 10h1v5H3zM5 10h12v2H5zM3 16h1v1H3zM5 16h12v2H5z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- More tools -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert link (Ctrl+K)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert image">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document -->
+          <div class="flex-1 overflow-auto bg-google-bg px-4 py-8 md:px-12 lg:px-16">
+            <div class="mx-auto bg-white document-shadow w-[816px] min-h-[1056px]">
+              <div id="page" class="font-times text-gray-900" style="padding: 72px 64px; font-size: 12pt; line-height: 1.5;">
+                
+                <!-- Document with template-based section titles -->
+                <div id="documentContent" class="min-h-[900px] relative">
+                  <div id="templateSections" class="space-y-8">
+                    <!-- Sections will be dynamically inserted here based on template type -->
+                  </div>
+                  <div id="cursor" class="absolute top-0 left-0 w-0.5 h-5 bg-blue-600 blinking-cursor"></div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <aside id="aiSidebar" class="w-0 overflow-hidden bg-white border-l border-google-border shadow-xl flex flex-col editor-transition">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b border-google-border bg-gradient-to-r from-google-blue to-blue-600 text-white">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">AI Assistant</div>
+              <div class="text-xs opacity-80 truncate">Ready to help with your document</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="aiCloseV2" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors" title="Close">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="flex-1 min-h-0 flex flex-col w-96">
+        <div id="aiMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="chat-bubble-ai p-3 max-w-[280px]">
+              <div class="text-sm text-gray-800">
+                👋 Welcome! I'm here to help you create your document. What would you like to write about today?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-google-border bg-white flex-shrink-0">
+          <div class="relative mb-3">
+            <textarea id="aiInput" rows="1" class="w-full resize-none border border-google-border rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent" placeholder="Ask me to help you get started..." style="min-height: 40px; max-height: 120px;"></textarea>
+            <button id="aiSend" class="absolute right-2 bottom-2 w-8 h-8 bg-google-blue text-white rounded-md hover:bg-google-blue-dark transition-colors flex items-center justify-center" title="Send message">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 gap-2 mb-3">
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              💡 Help me create a document outline
+            </button>
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              📝 Write an introduction paragraph
+            </button>
+            <button class="ai-suggestion p-2 text-xs bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+              🔍 Help me research this topic
+            </button>
+          </div>
+          <button id="githubConnect" class="w-full flex items-center justify-center gap-2 px-2 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium" title="Connect GitHub">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+            </svg>
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Get URL parameters to customize the document
+    const urlParams = new URLSearchParams(window.location.search);
+    const project = urlParams.get('project') || 'My Project';
+    const template = urlParams.get('template') || 'Document';
+    
+    // Update document title and icon based on template
+    const docTitle = document.getElementById('docTitle');
+    const docIcon = document.getElementById('docIcon');
+    const templateSections = document.getElementById('templateSections');
+    
+    // Set title based on template and project
+    docTitle.value = `${template} - ${project}`;
+    
+    // Generate template-specific sections with guidance content
+    function generateTemplateSections(templateType) {
+      const sections = {
+        'api contract': [
+          '# API Contract',
+          '<p class="text-gray-600 mb-4"><em>This document defines the interface contract for API endpoints, including request/response formats, authentication, and error handling.</em></p>',
+          '## Overview',
+          '<p class="text-gray-500 mb-2">Provide a high-level description of the API purpose and scope.</p>',
+          '## Authentication',
+          '<p class="text-gray-500 mb-2">Describe authentication methods (Bearer tokens, API keys, OAuth, etc.)</p>',
+          '## Base URL',
+          '<code class="bg-gray-100 px-2 py-1 rounded">https://api.example.com/v1</code>',
+          '## Endpoints',
+          '<p class="text-gray-500 mb-2">List all endpoints with methods, paths, and descriptions:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>GET /users - Retrieve user list</li><li>POST /users - Create new user</li><li>PUT /users/{id} - Update user</li></ul>',
+          '## Request/Response Format',
+          '<p class="text-gray-500 mb-2">Define standard request and response structures, including headers and data formats.</p>',
+          '## Error Handling',
+          '<p class="text-gray-500 mb-2">Document error codes, status codes, and error response format.</p>',
+          '## Rate Limiting',
+          '<p class="text-gray-500 mb-2">Specify rate limits, quotas, and throttling policies.</p>',
+          '## Examples',
+          '<p class="text-gray-500 mb-2">Provide sample requests and responses for key endpoints.</p>'
+        ],
+        'architecture notes': [
+          '# Architecture Notes',
+          '<p class="text-gray-600 mb-4"><em>Document system architecture, design decisions, and technical specifications for the project.</em></p>',
+          '## System Overview',
+          '<p class="text-gray-500 mb-2">High-level architecture diagram and description of the system components and their interactions.</p>',
+          '<div class="bg-blue-50 border border-blue-200 rounded p-3 mb-4"><strong>💡 Tip:</strong> Include diagrams, flowcharts, or sketches to visualize the architecture.</div>',
+          '## Components',
+          '<p class="text-gray-500 mb-2">Detailed breakdown of system components:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li><strong>Frontend:</strong> User interface layer</li><li><strong>Backend:</strong> Business logic and APIs</li><li><strong>Database:</strong> Data storage layer</li><li><strong>Cache:</strong> Performance optimization</li></ul>',
+          '## Data Flow',
+          '<p class="text-gray-500 mb-2">Describe how data flows through the system, from user input to data storage and back.</p>',
+          '## Security Considerations',
+          '<p class="text-gray-500 mb-2">Document security measures, authentication, authorization, and data protection strategies.</p>',
+          '## Performance Requirements',
+          '<p class="text-gray-500 mb-2">Define performance benchmarks, response times, and scalability targets.</p>',
+          '## Technology Stack',
+          '<p class="text-gray-500 mb-2">List technologies, frameworks, libraries, and tools used:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li><strong>Frontend:</strong> React, TypeScript, Tailwind CSS</li><li><strong>Backend:</strong> Node.js, Express, PostgreSQL</li><li><strong>Infrastructure:</strong> AWS, Docker, Kubernetes</li></ul>',
+          '## Deployment Architecture',
+          '<p class="text-gray-500 mb-2">Describe deployment strategy, environments, and infrastructure setup.</p>'
+        ],
+        'rfc': [
+          '# RFC: [Replace with Your Proposal Title]',
+          '<p class="text-gray-600 mb-4"><em>Request for Comments - A formal proposal for technical changes or new features.</em></p>',
+          '<div class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-6"><strong>📝 Instructions:</strong> Replace [Replace with...] placeholders with your specific content. Delete this note when done.</div>',
+          '## Summary',
+          '<p class="text-gray-500 mb-2">Brief 2-3 sentence summary of what you\'re proposing and why.</p>',
+          '<div class="bg-gray-50 border-l-4 border-gray-300 pl-4 mb-4"><strong>Example:</strong> "This RFC proposes implementing a new caching layer to improve API response times by 60%. The solution uses Redis for frequently accessed data and includes cache invalidation strategies."</div>',
+          '## Motivation',
+          '<p class="text-gray-500 mb-2">Explain the problem you\'re solving and why it\'s important:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>What issues exist with the current approach?</li><li>What business value will this provide?</li><li>What happens if we don\'t implement this?</li></ul>',
+          '## Detailed Design',
+          '<p class="text-gray-500 mb-2">Technical specifications and implementation details:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Architecture changes</li><li>New components or services</li><li>Data models and schemas</li><li>API changes</li><li>User interface modifications</li></ul>',
+          '## Implementation Plan',
+          '<p class="text-gray-500 mb-2">Step-by-step implementation approach:</p>',
+          '<ol class="list-decimal ml-6 mb-4 text-gray-600"><li><strong>Phase 1:</strong> Foundation and setup</li><li><strong>Phase 2:</strong> Core implementation</li><li><strong>Phase 3:</strong> Testing and optimization</li><li><strong>Phase 4:</strong> Deployment and monitoring</li></ol>',
+          '## Alternatives Considered',
+          '<p class="text-gray-500 mb-2">Other approaches you evaluated and why you chose this one.</p>',
+          '## Risks and Mitigation',
+          '<p class="text-gray-500 mb-2">Potential risks and how you plan to address them.</p>',
+          '## Success Metrics',
+          '<p class="text-gray-500 mb-2">How will you measure if this implementation is successful?</p>',
+          '## Unresolved Questions',
+          '<p class="text-gray-500 mb-2">Open questions that need further discussion or research.</p>'
+        ],
+        'code review guidelines': [
+          '# Code Review Guidelines',
+          '<p class="text-gray-600 mb-4"><em>Standards and best practices for conducting effective code reviews in our team.</em></p>',
+          '## Purpose of Code Reviews',
+          '<p class="text-gray-500 mb-2">Code reviews help us:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Catch bugs and security issues early</li><li>Ensure code quality and maintainability</li><li>Share knowledge across the team</li><li>Maintain consistent coding standards</li></ul>',
+          '## Review Process',
+          '<div class="bg-blue-50 border border-blue-200 rounded p-4 mb-4"><strong>🔄 Workflow:</strong><br/>1. Create pull request with clear description<br/>2. Assign 1-2 reviewers<br/>3. Address feedback promptly<br/>4. Get approval before merging<br/>5. Merge and delete branch</div>',
+          '## What to Look For',
+          '<p class="text-gray-500 mb-2"><strong>Code Quality:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Is the code readable and well-documented?</li><li>Are variable and function names descriptive?</li><li>Is the logic clear and efficient?</li><li>Are there any code smells or anti-patterns?</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Functionality:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Does the code solve the intended problem?</li><li>Are edge cases handled properly?</li><li>Is error handling appropriate?</li><li>Are there sufficient tests?</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Security & Performance:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Are there any security vulnerabilities?</li><li>Is sensitive data handled properly?</li><li>Are there performance implications?</li><li>Is the code scalable?</li></ul>',
+          '## Review Etiquette',
+          '<div class="bg-green-50 border border-green-200 rounded p-4 mb-4"><strong>✅ Do:</strong><br/>• Be constructive and specific<br/>• Explain the "why" behind suggestions<br/>• Acknowledge good code<br/>• Ask questions instead of making demands</div>',
+          '<div class="bg-red-50 border border-red-200 rounded p-4 mb-4"><strong>❌ Don\'t:</strong><br/>• Be overly critical or personal<br/>• Focus only on style issues<br/>• Review too many files at once<br/>• Approve without actually reviewing</div>',
+          '## Checklist for Reviewers',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>□ Code follows team coding standards</li><li>□ Tests are included and pass</li><li>□ Documentation is updated if needed</li><li>□ No obvious bugs or security issues</li><li>□ Performance impact is acceptable</li><li>□ PR description is clear and complete</li></ul>'
+        ],
+        'checklist': [
+          '# Project Checklist / Runbook',
+          '<p class="text-gray-600 mb-4"><em>Step-by-step procedures and checklists for common tasks and processes.</em></p>',
+          '## Deployment Checklist',
+          '<div class="bg-blue-50 border border-blue-200 rounded p-4 mb-4"><strong>🚀 Pre-Deployment:</strong></div>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>□ All tests pass in CI/CD</li><li>□ Code review approved</li><li>□ Database migrations tested</li><li>□ Feature flags configured</li><li>□ Monitoring alerts updated</li><li>□ Rollback plan prepared</li></ul>',
+          '<div class="bg-green-50 border border-green-200 rounded p-4 mb-4"><strong>✅ Deployment Steps:</strong></div>',
+          '<ol class="list-decimal ml-6 mb-4 text-gray-600"><li>Create deployment branch</li><li>Run database migrations</li><li>Deploy to staging environment</li><li>Verify functionality in staging</li><li>Deploy to production</li><li>Monitor logs and metrics</li></ol>',
+          '<div class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4"><strong>📊 Post-Deployment:</strong></div>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>□ Verify key functionality works</li><li>□ Check error rates and performance</li><li>□ Update documentation</li><li>□ Notify stakeholders</li></ul>',
+          '## Incident Response',
+          '<p class="text-gray-500 mb-2"><strong>Step 1: Assess and Communicate</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Determine severity level</li><li>Create incident channel</li><li>Notify on-call engineer</li><li>Update status page</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Step 2: Investigate and Fix</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Check logs and monitoring</li><li>Identify root cause</li><li>Implement fix or rollback</li><li>Verify resolution</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Step 3: Follow-up</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Document incident timeline</li><li>Conduct post-mortem</li><li>Implement preventive measures</li><li>Update runbooks</li></ul>',
+          '## Development Setup',
+          '<p class="text-gray-500 mb-2">Quick setup guide for new developers:</p>',
+          '<div class="bg-gray-100 p-4 rounded mb-4"><code>git clone [repository-url]<br/>npm install<br/>cp .env.example .env<br/>npm run dev</code></div>'
+        ],
+        'performance analysis': [
+          '# Performance Analysis',
+          '<p class="text-gray-600 mb-4"><em>Analysis of system performance, bottlenecks, and optimization recommendations.</em></p>',
+          '## Executive Summary',
+          '<p class="text-gray-500 mb-2">Brief overview of performance findings and key recommendations.</p>',
+          '<div class="bg-red-50 border border-red-200 rounded p-4 mb-4"><strong>🔍 Key Findings:</strong><br/>• Average response time: [X]ms<br/>• 95th percentile: [X]ms<br/>• Error rate: [X]%<br/>• Throughput: [X] requests/second</div>',
+          '## Performance Metrics',
+          '<p class="text-gray-500 mb-2"><strong>Response Times:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Average: [X]ms</li><li>Median (P50): [X]ms</li><li>95th Percentile (P95): [X]ms</li><li>99th Percentile (P99): [X]ms</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Throughput & Load:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Requests per second: [X]</li><li>Peak concurrent users: [X]</li><li>CPU utilization: [X]%</li><li>Memory usage: [X]%</li></ul>',
+          '## Bottlenecks Identified',
+          '<div class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4"><strong>⚠️ Performance Issues:</strong></div>',
+          '<ol class="list-decimal ml-6 mb-4 text-gray-600"><li><strong>Database Queries:</strong> Slow queries without indexes</li><li><strong>API Calls:</strong> Excessive external API requests</li><li><strong>Memory Leaks:</strong> Objects not properly garbage collected</li><li><strong>Network Latency:</strong> Large payload sizes</li></ol>',
+          '## Optimization Recommendations',
+          '<p class="text-gray-500 mb-2"><strong>High Priority (Quick Wins):</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Add database indexes for frequently queried columns</li><li>Implement response caching for static content</li><li>Compress API responses (gzip)</li><li>Optimize image sizes and formats</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Medium Priority:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Implement connection pooling</li><li>Add pagination for large data sets</li><li>Use CDN for static assets</li><li>Optimize bundle sizes</li></ul>',
+          '<p class="text-gray-500 mb-2"><strong>Long-term:</strong></p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Consider microservices architecture</li><li>Implement horizontal scaling</li><li>Add performance monitoring tools</li><li>Database sharding strategy</li></ul>',
+          '## Implementation Plan',
+          '<p class="text-gray-500 mb-2">Prioritized action items with timelines and owners.</p>',
+          '## Success Metrics',
+          '<p class="text-gray-500 mb-2">Target improvements:</p>',
+          '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Reduce average response time by 40%</li><li>Increase throughput by 60%</li><li>Reduce error rate to < 0.1%</li><li>Improve user satisfaction scores</li></ul>'
+        ]
+      };
+
+      // Enhanced default sections for unmatched templates
+      const defaultSections = [
+        '# Document Title',
+        '<p class="text-gray-600 mb-4"><em>Replace this with a brief description of your document\'s purpose.</em></p>',
+        '## Introduction',
+        '<p class="text-gray-500 mb-2">Provide context and background information. Explain what this document covers and who the intended audience is.</p>',
+        '## Main Content',
+        '<p class="text-gray-500 mb-2">This is where your primary content goes. Consider breaking this into multiple sections as needed:</p>',
+        '<ul class="list-disc ml-6 mb-4 text-gray-600"><li>Key points or requirements</li><li>Detailed explanations</li><li>Examples or case studies</li><li>Technical specifications</li></ul>',
+        '## Implementation Notes',
+        '<p class="text-gray-500 mb-2">Include any implementation details, technical considerations, or important notes.</p>',
+        '## Next Steps',
+        '<p class="text-gray-500 mb-2">Outline action items, follow-up tasks, or future considerations.</p>',
+        '## Conclusion',
+        '<p class="text-gray-500 mb-2">Summarize key takeaways and final thoughts.</p>'
+      ];
+
+      const templateKey = templateType.toLowerCase();
+      
+      // Check for partial matches with enhanced matching
+      for (const [key, value] of Object.entries(sections)) {
+        if (templateKey.includes(key.split(' ')[0]) || 
+            key.includes(templateKey.split(' ')[0]) ||
+            templateKey.includes(key.replace(/\s+/g, '')) ||
+            templateKey.includes('architecture') && key.includes('architecture') ||
+            templateKey.includes('review') && key.includes('review') ||
+            templateKey.includes('performance') && key.includes('performance') ||
+            templateKey.includes('checklist') && key.includes('checklist') ||
+            templateKey.includes('runbook') && key.includes('checklist')) {
+          return value;
+        }
+      }
+
+      return defaultSections;
+    }
+
+    // Insert template sections
+    const templateType = template.toLowerCase();
+    const sections = generateTemplateSections(templateType);
+    
+    templateSections.innerHTML = sections.map(section => {
+      if (section.startsWith('# ')) {
+        return `<h1 class="text-2xl font-bold mb-4 text-gray-800">${section.substring(2)}</h1>`;
+      } else if (section.startsWith('## ')) {
+        return `<h2 class="text-xl font-semibold mb-3 mt-6 text-gray-700">${section.substring(3)}</h2>`;
+      } else if (section.startsWith('<')) {
+        return section; // HTML content
+      }
+      return `<p class="mb-4">${section}</p>`;
+    }).join('');
+    
+    // Set icon based on template type
+    if (templateType.includes('api')) {
+      docIcon.textContent = 'A';
+      docIcon.className = 'w-8 h-8 rounded bg-green-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('test')) {
+      docIcon.textContent = 'T';
+      docIcon.className = 'w-8 h-8 rounded bg-purple-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('ui') || templateType.includes('design')) {
+      docIcon.textContent = 'U';
+      docIcon.className = 'w-8 h-8 rounded bg-pink-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('migration') || templateType.includes('database') || templateType.includes('erd')) {
+      docIcon.textContent = 'D';
+      docIcon.className = 'w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('project') || templateType.includes('overview')) {
+      docIcon.textContent = 'P';
+      docIcon.className = 'w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('bug') || templateType.includes('triage')) {
+      docIcon.textContent = 'B';
+      docIcon.className = 'w-8 h-8 rounded bg-red-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('architecture')) {
+      docIcon.textContent = 'A';
+      docIcon.className = 'w-8 h-8 rounded bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('rfc') || templateType.includes('proposal')) {
+      docIcon.textContent = 'R';
+      docIcon.className = 'w-8 h-8 rounded bg-cyan-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('performance')) {
+      docIcon.textContent = 'P';
+      docIcon.className = 'w-8 h-8 rounded bg-yellow-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else if (templateType.includes('checklist') || templateType.includes('runbook')) {
+      docIcon.textContent = 'C';
+      docIcon.className = 'w-8 h-8 rounded bg-emerald-600 text-white flex items-center justify-center text-sm font-semibold';
+    } else {
+      docIcon.textContent = template.charAt(0).toUpperCase();
+    }
+
+    // Simple AI chat functionality
+    (function(){
+      const input = document.getElementById('aiInput');
+      const send = document.getElementById('aiSend');
+      const box = document.getElementById('aiMessages');
+      const panel = document.getElementById('aiSidebar');
+      const closeBtn = document.getElementById('aiCloseV2');
+      const openBtn = document.getElementById('aiOpenV2');
+      const githubBtn = document.getElementById('githubConnect');
+      const suggestions = document.querySelectorAll('.ai-suggestion');
+      
+      // Update AI welcome message based on template
+      const welcomeMessage = box.querySelector('.chat-bubble-ai .text-sm');
+      welcomeMessage.innerHTML = `👋 Welcome! I'm ready to help you create your <strong>${template}</strong>. What would you like to work on first?`;
+      
+      // Auto-resize textarea
+      function autoResize() {
+        input.style.height = 'auto';
+        const newHeight = Math.min(input.scrollHeight, 120);
+        input.style.height = newHeight + 'px';
+        
+        const lines = Math.ceil((newHeight - 16) / 20);
+        if (lines > 1) {
+          send.style.bottom = '10px';
+        } else {
+          send.style.bottom = '8px';
+        }
+      }
+      
+      // Add message to chat
+      function addMessage(type, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3 ' + (type === 'user' ? 'flex-row-reverse' : '');
+        
+        const avatar = document.createElement('div');
+        avatar.className = type === 'user' 
+          ? 'w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0'
+          : 'w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0';
+        avatar.innerHTML = type === 'user' 
+          ? '<span class="text-xs font-semibold text-gray-600">You</span>'
+          : '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        
+        const bubble = document.createElement('div');
+        bubble.className = type === 'user' ? 'chat-bubble-user text-white p-3 max-w-[280px]' : 'chat-bubble-ai p-3 max-w-[280px]';
+        
+        const content = document.createElement('div');
+        content.className = 'text-sm';
+        content.innerHTML = text;
+        
+        bubble.appendChild(content);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        box.appendChild(messageDiv);
+        box.scrollTop = box.scrollHeight;
+      }
+      
+      // Send message
+      function onSend() {
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        input.value = '';
+        autoResize();
+        
+        // Template-specific AI responses
+        setTimeout(() => {
+          let response = '';
+          if (text.includes('outline') || text.includes('structure')) {
+            response = `Great! I've provided a basic outline for your <strong>${template}</strong>. You can expand each section with relevant content. Would you like help with any specific section?`;
+          } else if (text.includes('introduction') || text.includes('intro')) {
+            response = `I can help you write an engaging introduction for your <strong>${template}</strong>. Let me know what key points you want to cover in the introduction.`;
+          } else if (text.includes('research')) {
+            response = `I can help you research best practices and examples for <strong>${template}</strong>. What specific area would you like me to focus on?`;
+          } else {
+            response = `I'm here to help you with your <strong>${template}</strong>. I can assist with content for each section, formatting, and best practices for this document type.`;
+          }
+          addMessage('ai', response);
+        }, 500);
+      }
+      
+      // Event listeners
+      input.addEventListener('input', autoResize);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      });
+      send.addEventListener('click', onSend);
+      
+      // Suggestion buttons
+      suggestions.forEach(btn => {
+        btn.addEventListener('click', () => {
+          input.value = btn.textContent.replace('💡 ', '').replace('📝 ', '').replace('🔍 ', '');
+          onSend();
+        });
+      });
+      
+      // Open/Close sidebar
+      if (openBtn && panel) {
+        openBtn.addEventListener('click', () => {
+          panel.classList.remove('w-0');
+          panel.classList.add('w-96');
+          openBtn.style.display = 'none';
+          setTimeout(() => input.focus(), 300);
+        });
+      }
+      
+      if (closeBtn && panel) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('w-96');
+          panel.classList.add('w-0');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+        });
+      }
+      
+      if (githubBtn) {
+        githubBtn.addEventListener('click', () => {
+          addMessage('ai', '🔗 GitHub integration coming soon! This will help you auto-generate documentation from your repositories.');
+        });
+      }
+      
+      autoResize();
+    })();
+
+    // Make document content editable
+    const documentContent = document.getElementById('documentContent');
+    const cursor = document.getElementById('cursor');
+    
+    documentContent.contentEditable = true;
+    cursor.style.display = 'none'; // Hide cursor since we have content now
+    
+    documentContent.addEventListener('click', () => {
+      documentContent.focus();
+    });
+  </script>
+</body>
+</html>

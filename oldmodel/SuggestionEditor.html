@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Editor with AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+                        'times': ['Times New Roman', 'serif'],
+                    },
+                    colors: {
+                        'google-blue': '#1a73e8',
+                        'google-blue-dark': '#1557b0',
+                        'google-gray': '#5f6368',
+                        'google-gray-dark': '#3c4043',
+                        'google-gray-light': '#f1f3f4',
+                        'google-border': '#e8eaed',
+                        'google-bg': '#f9fbfd',
+                        'google-chat-bg': '#fafbfc',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .chat-input:focus {
+            box-shadow: 0 0 0 1px #1a73e8;
+        }
+        .document-shadow {
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .highlight-change {
+            background-color: #fff2cc;
+            border: 2px solid #f9cb9c;
+            animation: highlight-flash 2s ease-in-out;
+        }
+        @keyframes highlight-flash {
+            0%, 100% { background-color: #fff2cc; }
+            50% { background-color: #ffd966; }
+        }
+        .change-popup {
+            position: absolute;
+            background: white;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 16px;
+            max-width: 300px;
+            z-index: 100;
+        }
+        .change-indicator {
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 100%;
+            background: #4285f4;
+            border-radius: 2px;
+        }
+        
+        /* Inline suggestion styles */
+        .inline-suggestion {
+            position: relative;
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 4px;
+            margin: 2px 0;
+            animation: pulse-suggestion 2s ease-in-out;
+        }
+        
+        @keyframes pulse-suggestion {
+            0%, 100% { background-color: #fff3cd; }
+            50% { background-color: #fdcb6e; }
+        }
+        
+        .suggestion-overlay {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 12px;
+            z-index: 1000;
+            margin-top: 4px;
+        }
+        
+        .suggestion-content {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .suggestion-original {
+            background: #ffecec;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 4px 0;
+            border-left: 3px solid #ff6b6b;
+        }
+        
+        .suggestion-new {
+            background: #e8f5e8;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 4px 0;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .suggestion-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .suggestion-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .accept-btn {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .accept-btn:hover {
+            background: #45a049;
+        }
+        
+        .reject-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .reject-btn:hover {
+            background: #d32f2f;
+        }
+        
+        .skip-btn {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .skip-btn:hover {
+            background: #5a6268;
+        }
+        
+        /* Document container positioning */
+        .document-container {
+            position: relative;
+        }
+        
+        /* Hide suggestion overlays when not active */
+        .suggestion-overlay.hidden {
+            display: none;
+        }
+        
+        /* Toolbar styles */
+        .toolbar-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .toolbar-btn:hover {
+            background-color: #f1f3f4 !important;
+        }
+        .toolbar-btn.active {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+        }
+        /* Custom select styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%235f6368' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+            background-size: 8px;
+            padding-right: 20px;
+            min-width: 80px;
+        }
+        
+        /* Remove default select styling issues */
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px #1a73e8;
+        }
+    </style>
+</head>
+<body class="font-google-sans bg-google-bg min-h-screen">
+    <div class="flex min-h-screen relative">
+        <!-- Main Editor Section -->
+        <div class="flex-1 flex flex-col bg-white transition-all duration-300 ease-in-out min-h-screen" id="editorSection">
+            <!-- Header -->
+            <div class="bg-white text-google-gray px-5 py-3 flex justify-between items-center border-b border-google-border shadow-sm">
+                <div class="text-lg font-normal text-google-gray-dark">Untitled document</div>
+                <button class="bg-google-blue text-white border-none px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out flex items-center gap-2 hover:bg-google-blue-dark hover:shadow-md" id="aiToggleBtn">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                    </svg>
+                    AI Assistant
+                </button>
+            </div>
+            
+            <!-- Editor Content -->
+            <div class="flex-1 flex flex-col bg-google-bg px-4 py-12 md:px-16 lg:px-24 overflow-y-auto">
+                <div class="max-w-4xl mx-auto bg-white document-shadow w-full document-container" id="documentContainer">
+                    <!-- Document content will be rendered here -->
+                    <div class="w-full border-none resize-none outline-none font-times bg-white text-gray-900 text-base leading-relaxed" 
+                         style="padding: 120px 120px; font-size: 12pt; line-height: 1.5; min-height: 100vh;" 
+                         id="documentContent">
+                        <!-- Content will be dynamically inserted here -->
+                    </div>
+                    
+                    <!-- Hidden textarea for content storage -->
+                    <textarea 
+                        class="hidden"
+                        id="textEditor"
+                    ># The Future of Artificial Intelligence in Software Development
+
+## Introduction
+
+Artificial intelligence has revolutionized many industries over the past decade, and software development is no exception. From automated code generation to intelligent debugging tools, AI is transforming how developers write, test, and maintain code. This document explores the current state and future prospects of AI in software development.
+
+The integration of AI into development workflows has accelerated dramatically since 2020. Tools like GitHub Copilot, OpenAI Codex, and various automated testing frameworks have demonstrated the potential for AI to augment human capabilities rather than replace them entirely. This symbiotic relationship between human creativity and machine efficiency represents a paradigm shift in how we approach software engineering.
+
+## Current Applications of AI in Development
+
+### Code Generation and Completion
+
+Modern AI-powered code completion tools have evolved far beyond simple syntax suggestions. These systems can now understand context, generate entire functions, and even suggest architectural patterns based on the existing codebase. Developers report significant productivity gains when using these tools, with some studies showing up to 55% faster completion of coding tasks.
+
+The accuracy of AI-generated code has improved substantially. While early iterations produced syntactically correct but often logically flawed code, current generation models demonstrate a much better understanding of programming intent and best practices. This improvement stems from training on vast repositories of high-quality code and incorporating feedback from millions of developer interactions.
+
+### Automated Testing and Quality Assurance
+
+AI has found particularly strong applications in software testing. Machine learning algorithms can automatically generate test cases, identify edge cases that human testers might miss, and predict areas of code most likely to contain bugs. This predictive capability allows teams to focus their testing efforts more effectively.
+
+Static code analysis tools powered by AI can detect security vulnerabilities, performance bottlenecks, and maintainability issues with unprecedented accuracy. These tools learn from patterns in codebases and can identify subtle issues that traditional rule-based analyzers might overlook.
+
+### Bug Detection and Resolution
+
+Advanced AI systems can now not only detect bugs but also suggest fixes. By analyzing similar issues in large codebases, these systems can recommend solutions that have worked in comparable scenarios. Some tools can even automatically generate patches for common vulnerability patterns.
+
+The speed of bug detection has increased dramatically. What once required manual code reviews and extensive testing can now be identified in real-time as developers write code. This immediate feedback loop significantly reduces the cost and time associated with fixing defects.
+
+## Challenges and Limitations
+
+### Code Quality and Reliability
+
+Despite impressive advances, AI-generated code still requires careful human oversight. The systems can produce code that appears correct but contains subtle logical errors or security vulnerabilities. Developers must maintain their critical thinking skills and not become overly dependent on AI suggestions.
+
+Training data bias represents another significant challenge. AI models trained predominantly on open-source code may not reflect the specific requirements and constraints of enterprise environments. This can lead to suggestions that are technically correct but inappropriate for the specific context.
+
+### Intellectual Property and Legal Concerns
+
+The use of AI in code generation raises complex questions about intellectual property ownership. When an AI tool suggests code based on its training data, it's unclear who owns the resulting intellectual property. Organizations must carefully consider these implications when adopting AI development tools.
+
+There are also concerns about license compliance. AI models trained on open-source code with various licenses may inadvertently suggest code that violates licensing terms. Companies need robust processes to ensure compliance with all applicable licenses.
+
+## Future Directions
+
+### Autonomous Development Systems
+
+The next frontier in AI-assisted development involves more autonomous systems capable of understanding high-level requirements and translating them into complete software solutions. These systems would handle not just code generation but also architecture design, testing strategy, and deployment planning.
+
+Research in this area focuses on improving AI's understanding of business requirements and its ability to make trade-offs between different design approaches. The goal is not to replace human developers but to elevate them to higher-level strategic and creative roles.
+
+### Integration with Development Workflows
+
+Future AI tools will be more deeply integrated into development environments and workflows. Rather than providing isolated suggestions, these systems will understand the entire development context, including project history, team conventions, and organizational constraints.
+
+This deeper integration will enable more sophisticated assistance, such as suggesting refactoring strategies that align with long-term architectural goals or identifying technical debt that should be addressed before implementing new features.
+
+## Conclusion
+
+The future of AI in software development is both exciting and challenging. While these tools offer tremendous potential for improving productivity and code quality, they also require careful consideration of their limitations and implications.
+
+Successful adoption of AI in development requires a balanced approach that leverages the strengths of both human creativity and machine efficiency. Organizations that can effectively integrate these technologies while maintaining strong engineering practices will likely gain significant competitive advantages in the coming years.
+
+As we move forward, the key to success will be maintaining human oversight and critical thinking while embracing the productivity gains that AI can provide. The future belongs to developers who can effectively collaborate with AI systems, using them as powerful tools to augment their capabilities rather than replace their judgment.</textarea>
+                </div>
+            </div>
+            
+            <!-- Status Bar -->
+            <div class="bg-white px-5 py-2 text-xs text-google-gray border-t border-google-border">
+                Ready • Last edit was a few seconds ago
+            </div>
+        </div>
+
+        <!-- AI Chatbot Panel -->
+        <div class="w-96 bg-white fixed -right-96 top-0 h-screen shadow-xl transition-all duration-300 ease-in-out flex flex-col z-50 border-l border-google-border" id="chatbotPanel">
+            <!-- Compact Chatbot Header -->
+            <div class="bg-gradient-to-r from-google-blue to-blue-600 text-white px-4 py-3 flex justify-between items-center shadow-md">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold">AI Assistant</div>
+                        <div class="text-xs text-blue-100">Ready to help</div>
+                    </div>
+                </div>
+                <button class="bg-transparent border-none text-white text-xl cursor-pointer p-1 rounded-full transition-all duration-200 ease-in-out w-8 h-8 flex items-center justify-center hover:bg-white hover:bg-opacity-20" id="closeChatBtn">
+                    &times;
+                </button>
+            </div>
+
+            <!-- AI Features Toolbar -->
+            <div class="bg-white border-b border-google-border px-4 py-2">
+                <div class="flex gap-2 flex-wrap">
+                    <button class="flex items-center gap-1 px-3 py-1 bg-google-gray-light text-google-gray-dark text-xs rounded-full hover:bg-gray-200 transition-colors" id="githubRepoBtn">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                        </svg>
+                        GitHub
+                    </button>
+                    <button class="flex items-center gap-1 px-3 py-1 bg-google-gray-light text-google-gray-dark text-xs rounded-full hover:bg-gray-200 transition-colors" id="templatesBtn">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                        </svg>
+                        Templates
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Content - Copilot Style -->
+            <div class="flex-1 flex flex-col bg-white overflow-hidden">
+                <!-- Messages Container -->
+                <div class="flex-1 overflow-y-auto px-4 py-3" id="chatMessages">
+                    <!-- Welcome Message - Copilot Style -->
+                    <div class="mb-6">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900 mb-1">AI</div>
+                                <div class="text-sm text-gray-600 leading-relaxed">
+                                    <p class="mb-3">I'm here to help you write better documentation. I can:</p>
+                                    <ul class="space-y-1 text-xs text-gray-500">
+                                        <li>• Analyze and improve your writing</li>
+                                        <li>• Review uploaded files and suggest edits</li>
+                                        <li>• Help with code documentation</li>
+                                        <li>• Generate content from templates</li>
+                                    </ul>
+                                    <p class="mt-3 text-xs text-gray-500">
+                                        💡 <strong>Tip:</strong> Upload a file or ask me to help with specific sections of your document.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area - Copilot Style with File Upload -->
+                <div class="border-t border-gray-200 p-4">
+                    <div class="flex items-end gap-3">
+                        <div class="flex-1 relative">
+                            <!-- File Upload Area -->
+                            <div class="hidden mb-2" id="fileUploadArea">
+                                <div class="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M8 4a4 4 0 00-4 4v4a4 4 0 004 4h4a4 4 0 004-4V8a4 4 0 00-4-4H8zM7 9a1 1 0 012 0v2a1 1 0 11-2 0V9z"/>
+                                    </svg>
+                                    <span class="text-blue-700" id="fileUploadText">Drop files here or click to browse</span>
+                                    <button class="ml-auto text-blue-600 hover:text-blue-800" id="closeFileUpload">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Text Input with integrated controls -->
+                            <div class="relative border border-gray-300 rounded-lg focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500">
+                                <textarea 
+                                    class="w-full px-3 py-3 pr-20 border-none outline-none text-sm resize-none bg-transparent"
+                                    id="chatInput"
+                                    placeholder="Ask Copilot a question or type @ to upload files..."
+                                    rows="1"
+                                    style="min-height: 44px; max-height: 120px;"
+                                ></textarea>
+                                
+                                <!-- Input Controls -->
+                                <div class="absolute right-2 top-2 flex items-center gap-1">
+                                    <!-- File Upload Button -->
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors" id="attachFileBtn" title="Attach file">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    <!-- Send Button -->
+                                    <button class="p-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" id="sendBtn" disabled>
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden File Input -->
+                            <input type="file" class="hidden" id="fileInput" multiple accept=".txt,.md,.js,.py,.html,.css,.json,.xml,.pdf,.docx">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Repo Modal -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-60 hidden items-center justify-center" id="githubModal">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Connect GitHub Repository</h3>
+                <input type="text" placeholder="Enter GitHub repo URL (e.g., owner/repo)" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4" id="githubInput">
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300" id="cancelGithub">Cancel</button>
+                    <button class="flex-1 bg-google-blue text-white px-4 py-2 rounded-lg hover:bg-google-blue-dark" id="confirmGithub">Connect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Modal -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-60 hidden items-center justify-center" id="templatesModal">
+            <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Choose a Template</h3>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="technical">
+                        <div class="font-medium text-sm">Technical Documentation</div>
+                        <div class="text-xs text-gray-600">API docs, user guides</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="research">
+                        <div class="font-medium text-sm">Research Paper</div>
+                        <div class="text-xs text-gray-600">Academic format</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="proposal">
+                        <div class="font-medium text-sm">Project Proposal</div>
+                        <div class="text-xs text-gray-600">Business plans</div>
+                    </button>
+                    <button class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left template-btn" data-template="meeting">
+                        <div class="font-medium text-sm">Meeting Notes</div>
+                        <div class="text-xs text-gray-600">Structured notes</div>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300" id="cancelTemplates">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const aiToggleBtn = document.getElementById('aiToggleBtn');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+        const editorSection = document.getElementById('editorSection');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+
+        // Modal elements
+        const githubModal = document.getElementById('githubModal');
+        const templatesModal = document.getElementById('templatesModal');
+        
+        // Feature buttons
+        const githubRepoBtn = document.getElementById('githubRepoBtn');
+        const templatesBtn = document.getElementById('templatesBtn');
+
+        // File upload elements (integrated)
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const fileInput = document.getElementById('fileInput');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileUploadText = document.getElementById('fileUploadText');
+        const closeFileUpload = document.getElementById('closeFileUpload');
+
+        // GitHub elements
+        const githubInput = document.getElementById('githubInput');
+        const cancelGithub = document.getElementById('cancelGithub');
+        const confirmGithub = document.getElementById('confirmGithub');
+
+        // Template elements
+        const cancelTemplates = document.getElementById('cancelTemplates');
+        const templateBtns = document.querySelectorAll('.template-btn');
+
+        // Auto-resize textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        // Enable/disable send button based on input
+        function updateSendButton() {
+            const hasText = chatInput.value.trim().length > 0;
+            sendBtn.disabled = !hasText;
+        }
+
+        // Toggle chatbot panel
+        function toggleChatbot() {
+            const isOpen = chatbotPanel.classList.contains('right-0');
+            
+            if (isOpen) {
+                closeChatbot();
+            } else {
+                openChatbot();
+            }
+        }
+
+        function openChatbot() {
+            chatbotPanel.classList.remove('-right-96');
+            chatbotPanel.classList.add('right-0');
+            editorSection.classList.add('mr-96');
+            aiToggleBtn.innerHTML = `
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+                Close AI
+            `;
+            chatInput.focus();
+        }
+
+        function closeChatbot() {
+            chatbotPanel.classList.remove('right-0');
+            chatbotPanel.classList.add('-right-96');
+            editorSection.classList.remove('mr-96');
+            aiToggleBtn.innerHTML = `
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                </svg>
+                AI Assistant
+            `;
+        }
+
+        // Modal functions
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Feature event listeners
+        githubRepoBtn.addEventListener('click', () => showModal(githubModal));
+        templatesBtn.addEventListener('click', () => showModal(templatesModal));
+
+        // File upload functionality - integrated in input
+        attachFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Show file upload area when @ is typed
+        chatInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            autoResize(e.target);
+            updateSendButton();
+            
+            if (value.includes('@') && !fileUploadArea.classList.contains('hidden')) {
+                // Keep file upload area visible
+            } else if (value.includes('@')) {
+                showFileUploadArea();
+            }
+        });
+
+        function showFileUploadArea() {
+            fileUploadArea.classList.remove('hidden');
+            fileUploadText.textContent = 'Drop files here or click to browse';
+        }
+
+        function hideFileUploadArea() {
+            fileUploadArea.classList.add('hidden');
+        }
+
+        closeFileUpload.addEventListener('click', hideFileUploadArea);
+
+        // Drag and drop on the file upload area
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('bg-blue-100', 'border-blue-300');
+        });
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('bg-blue-100', 'border-blue-300');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // Also allow drag and drop on the entire chat input area
+        const inputContainer = chatInput.parentElement;
+        inputContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            showFileUploadArea();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                addMessage(`� ${file.name}`, 'file');
+                addMessage(`I've received your file "${file.name}". I can help you analyze, edit, or improve this document. What would you like me to do with it?`, 'ai');
+            });
+            hideFileUploadArea();
+            // Remove @ from input if it exists
+            chatInput.value = chatInput.value.replace('@', '');
+            updateSendButton();
+        }
+
+        // GitHub functionality
+        confirmGithub.addEventListener('click', () => {
+            const repoUrl = githubInput.value.trim();
+            if (repoUrl) {
+                addMessage(`Connected to GitHub: ${repoUrl}`, 'system');
+                addMessage(`I've connected to the repository "${repoUrl}". I can help you review code, suggest improvements, or generate documentation. What would you like to work on?`, 'ai');
+                githubInput.value = '';
+                hideModal(githubModal);
+            }
+        });
+
+        cancelGithub.addEventListener('click', () => hideModal(githubModal));
+
+        // Template functionality
+        templateBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const template = btn.dataset.template;
+                const templateName = btn.querySelector('.font-medium').textContent;
+                
+                const templates = {
+                    technical: `# Technical Documentation
+
+## Overview
+Brief description of the project or feature.
+
+## Requirements
+- Requirement 1
+- Requirement 2
+
+## Implementation
+Detailed implementation steps.
+
+## API Reference
+Document your APIs here.
+
+## Examples
+Code examples and usage.`,
+                    research: `# Research Paper Title
+
+## Abstract
+Brief summary of the research.
+
+## Introduction
+Background and problem statement.
+
+## Methodology
+Research methods and approach.
+
+## Results
+Findings and data analysis.
+
+## Discussion
+Interpretation of results.
+
+## Conclusion
+Summary and future work.
+
+## References
+Bibliography and citations.`,
+                    proposal: `# Project Proposal
+
+## Executive Summary
+Brief overview of the proposal.
+
+## Problem Statement
+What problem are we solving?
+
+## Proposed Solution
+How will we solve it?
+
+## Timeline
+Project milestones and deadlines.
+
+## Budget
+Cost breakdown and resources.
+
+## Expected Outcomes
+What we aim to achieve.`,
+                    meeting: `# Meeting Notes
+
+**Date:** ${new Date().toLocaleDateString()}
+**Attendees:** 
+**Duration:** 
+
+## Agenda
+1. Topic 1
+2. Topic 2
+3. Topic 3
+
+## Discussion Points
+- Point 1
+- Point 2
+
+## Action Items
+- [ ] Task 1 - Assignee
+- [ ] Task 2 - Assignee
+
+## Next Steps
+What happens next?`
+                };
+
+                document.getElementById('textEditor').value = templates[template];
+                addMessage(`Applied template: ${templateName}`, 'system');
+                addMessage(`I've applied the "${templateName}" template to your document. Feel free to customize it or ask me to help you fill in specific sections!`, 'ai');
+                hideModal(templatesModal);
+            });
+        });
+
+        cancelTemplates.addEventListener('click', () => hideModal(templatesModal));
+
+        // Chat functionality with inline AI document editing
+        let currentChanges = [];
+        let changeIndex = 0;
+        let inlineSuggestions = [];
+        let currentSuggestionIndex = 0;
+
+        // Initialize document content on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            renderDocumentContent();
+        });
+
+        function renderDocumentContent() {
+            const textEditor = document.getElementById('textEditor');
+            const documentContent = document.getElementById('documentContent');
+            const content = textEditor.value;
+            
+            // Convert markdown-like content to HTML paragraphs
+            const htmlContent = content
+                .split('\n\n')
+                .map(paragraph => {
+                    if (paragraph.startsWith('# ')) {
+                        return `<h1 class="text-2xl font-bold mb-4 mt-8">${paragraph.substring(2)}</h1>`;
+                    } else if (paragraph.startsWith('## ')) {
+                        return `<h2 class="text-xl font-semibold mb-3 mt-6">${paragraph.substring(3)}</h2>`;
+                    } else if (paragraph.startsWith('### ')) {
+                        return `<h3 class="text-lg font-medium mb-2 mt-4">${paragraph.substring(4)}</h3>`;
+                    } else if (paragraph.trim() !== '') {
+                        return `<p class="mb-4">${paragraph}</p>`;
+                    }
+                    return '';
+                })
+                .join('');
+                
+            documentContent.innerHTML = htmlContent;
+        }
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                chatInput.value = '';
+                autoResize(chatInput);
+                updateSendButton();
+                
+                // Simulate AI making inline changes to the document
+                setTimeout(() => {
+                    makeInlineAIChanges(message);
+                }, 1000);
+            }
+        }
+
+        function makeInlineAIChanges(userMessage) {
+            addMessage("🔍 Analyzing your document and preparing suggestions...", 'ai');
+            
+            // Define possible AI changes based on different types of requests
+            const changeTypes = [
+                {
+                    pattern: /improve|better|enhance|refine/i,
+                    changes: [
+                        {
+                            original: "Artificial intelligence has revolutionized many industries",
+                            suggested: "Machine learning and artificial intelligence have fundamentally transformed numerous industries",
+                            reason: "Enhanced specificity and impact",
+                            type: "improvement"
+                        },
+                        {
+                            original: "This symbiotic relationship between human creativity and machine efficiency",
+                            suggested: "This collaborative partnership between human ingenuity and computational efficiency",
+                            reason: "More precise terminology",
+                            type: "improvement"
+                        },
+                        {
+                            original: "some studies showing up to 55% faster completion",
+                            suggested: "some studies showing up to 35% faster completion",
+                            reason: "Corrected statistic accuracy",
+                            type: "correction"
+                        }
+                    ]
+                },
+                {
+                    pattern: /shorten|concise|brief|shorter/i,
+                    changes: [
+                        {
+                            original: "The integration of AI into development workflows has accelerated dramatically since 2020. Tools like GitHub Copilot, OpenAI Codex, and various automated testing frameworks have demonstrated the potential for AI to augment human capabilities rather than replace them entirely.",
+                            suggested: "AI integration in development has accelerated since 2020, with tools like GitHub Copilot demonstrating AI's potential to augment rather than replace human capabilities.",
+                            reason: "Condensed for clarity",
+                            type: "simplification"
+                        }
+                    ]
+                },
+                {
+                    pattern: /expand|detail|elaborate|more/i,
+                    changes: [
+                        {
+                            original: "Future AI tools will be more deeply integrated into development environments and workflows.",
+                            suggested: "Future AI tools will be seamlessly integrated into development environments and workflows, offering contextual assistance that understands project architecture, coding standards, team preferences, and business requirements in real-time.",
+                            reason: "Added comprehensive details",
+                            type: "expansion"
+                        }
+                    ]
+                }
+            ];
+
+            // Find matching change type
+            let selectedChanges = [];
+            for (const changeType of changeTypes) {
+                if (changeType.pattern.test(userMessage)) {
+                    selectedChanges = changeType.changes;
+                    break;
+                }
+            }
+
+            // If no specific pattern matches, use default improvements
+            if (selectedChanges.length === 0) {
+                selectedChanges = changeTypes[0].changes; // Default to improvements
+            }
+
+            // Filter changes that exist in the document
+            inlineSuggestions = selectedChanges.filter(change => {
+                const documentContent = document.getElementById('documentContent');
+                return documentContent.innerHTML.includes(change.original);
+            });
+
+            if (inlineSuggestions.length > 0) {
+                setTimeout(() => {
+                    addMessage(`✨ I found ${inlineSuggestions.length} suggestion${inlineSuggestions.length > 1 ? 's' : ''} for your document. I'll show them to you one by one directly in the document.`, 'ai');
+                    
+                    setTimeout(() => {
+                        startInlineSuggestions();
+                    }, 1000);
+                }, 500);
+            } else {
+                addMessage("I've reviewed your document and it looks great as is! Feel free to ask for specific improvements.", 'ai');
+            }
+        }
+
+        function startInlineSuggestions() {
+            currentSuggestionIndex = 0;
+            showNextInlineSuggestion();
+        }
+
+        function showNextInlineSuggestion() {
+            if (currentSuggestionIndex >= inlineSuggestions.length) {
+                addMessage("🎉 All suggestions have been reviewed! Your document is ready.", 'ai');
+                cleanupInlineSuggestions();
+                return;
+            }
+
+            const suggestion = inlineSuggestions[currentSuggestionIndex];
+            const documentContent = document.getElementById('documentContent');
+            
+            // Clear any existing suggestions
+            cleanupInlineSuggestions();
+            
+            // Find and highlight the text to be changed
+            const originalHTML = documentContent.innerHTML;
+            const suggestionId = `suggestion-${currentSuggestionIndex}`;
+            
+            const highlightedHTML = originalHTML.replace(
+                suggestion.original,
+                `<span class="inline-suggestion" id="${suggestionId}">${suggestion.original}</span>`
+            );
+            
+            documentContent.innerHTML = highlightedHTML;
+            
+            // Create and show the suggestion overlay
+            setTimeout(() => {
+                createSuggestionOverlay(suggestionId, suggestion);
+                
+                // Scroll to the suggestion
+                const suggestionElement = document.getElementById(suggestionId);
+                if (suggestionElement) {
+                    suggestionElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }
+                
+                // Notify in chat
+                addMessage(`� Suggestion ${currentSuggestionIndex + 1} of ${inlineSuggestions.length}: ${suggestion.reason}. Check the highlighted text in your document.`, 'ai');
+            }, 500);
+        }
+
+        function createSuggestionOverlay(suggestionId, suggestion) {
+            const suggestionElement = document.getElementById(suggestionId);
+            if (!suggestionElement) return;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'suggestion-overlay';
+            overlay.innerHTML = `
+                <div class="suggestion-content">
+                    <div class="text-sm font-medium mb-2">💡 ${suggestion.reason}</div>
+                    
+                    <div class="text-xs text-gray-600 mb-1">Current:</div>
+                    <div class="suggestion-original">${suggestion.original}</div>
+                    
+                    <div class="text-xs text-gray-600 mb-1">Suggested:</div>
+                    <div class="suggestion-new">${suggestion.suggested}</div>
+                    
+                    <div class="suggestion-buttons">
+                        <button class="suggestion-btn accept-btn" onclick="acceptInlineSuggestion(${currentSuggestionIndex})">
+                            ✅ Accept
+                        </button>
+                        <button class="suggestion-btn reject-btn" onclick="rejectInlineSuggestion(${currentSuggestionIndex})">
+                            ❌ Reject
+                        </button>
+                        <button class="suggestion-btn skip-btn" onclick="skipInlineSuggestion(${currentSuggestionIndex})">
+                            ⏭️ Skip
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            suggestionElement.appendChild(overlay);
+        }
+
+        function acceptInlineSuggestion(index) {
+            const suggestion = inlineSuggestions[index];
+            const suggestionId = `suggestion-${index}`;
+            const suggestionElement = document.getElementById(suggestionId);
+            
+            if (suggestionElement) {
+                // Replace the content
+                suggestionElement.outerHTML = suggestion.suggested;
+                
+                // Update the hidden textarea
+                const textEditor = document.getElementById('textEditor');
+                textEditor.value = textEditor.value.replace(suggestion.original, suggestion.suggested);
+                
+                addMessage(`✅ Accepted: "${suggestion.reason}"`, 'system');
+            }
+            
+            currentSuggestionIndex++;
+            setTimeout(() => showNextInlineSuggestion(), 1000);
+        }
+
+        function rejectInlineSuggestion(index) {
+            const suggestion = inlineSuggestions[index];
+            const suggestionId = `suggestion-${index}`;
+            const suggestionElement = document.getElementById(suggestionId);
+            
+            if (suggestionElement) {
+                // Keep original content, remove highlighting
+                suggestionElement.outerHTML = suggestion.original;
+                addMessage(`❌ Rejected: "${suggestion.reason}"`, 'system');
+            }
+            
+            currentSuggestionIndex++;
+            setTimeout(() => showNextInlineSuggestion(), 1000);
+        }
+
+        function skipInlineSuggestion(index) {
+            const suggestion = inlineSuggestions[index];
+            const suggestionId = `suggestion-${index}`;
+            const suggestionElement = document.getElementById(suggestionId);
+            
+            if (suggestionElement) {
+                // Keep original content, remove highlighting
+                suggestionElement.outerHTML = suggestion.original;
+                addMessage(`⏭️ Skipped: "${suggestion.reason}"`, 'system');
+            }
+            
+            currentSuggestionIndex++;
+            setTimeout(() => showNextInlineSuggestion(), 1000);
+        }
+
+        function cleanupInlineSuggestions() {
+            // Remove all suggestion overlays and highlighting
+            const suggestions = document.querySelectorAll('.inline-suggestion');
+            suggestions.forEach(suggestion => {
+                const overlay = suggestion.querySelector('.suggestion-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+                suggestion.classList.remove('inline-suggestion');
+                suggestion.removeAttribute('id');
+            });
+        }
+
+        // Make functions global so buttons can access them
+        window.acceptInlineSuggestion = acceptInlineSuggestion;
+        window.rejectInlineSuggestion = rejectInlineSuggestion;
+        window.skipInlineSuggestion = skipInlineSuggestion;
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'system') {
+                messageDiv.className = 'mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        <span>${text}</span>
+                    </div>
+                `;
+            } else if (sender === 'file') {
+                messageDiv.className = 'mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M8 4a4 4 0 00-4 4v4a4 4 0 004 4h4a4 4 0 004-4V8a4 4 0 00-4-4H8zM7 9a1 1 0 012 0v2a1 1 0 11-2 0V9z"/>
+                        </svg>
+                        <span>${text}</span>
+                    </div>
+                `;
+            } else {
+                messageDiv.className = 'mb-4 flex items-start gap-3';
+                
+                const avatar = sender === 'user' 
+                    ? `<div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                         <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+                         </svg>
+                       </div>`
+                    : `<div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                         <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2l3.09 6.26L22 9l-5.91 4.74L18 22l-6-3.27L6 22l1.91-8.26L2 9l6.91-.74L12 2z"/>
+                         </svg>
+                       </div>`;
+                
+                messageDiv.innerHTML = `
+                    ${avatar}
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900 mb-1">${sender === 'user' ? 'You' : 'GitHub Copilot'}</div>
+                        <div class="text-sm text-gray-700 leading-relaxed">${text}</div>
+                    </div>
+                `;
+            }
+            
+            // Remove welcome message if it exists
+            const welcomeMsg = chatMessages.querySelector('.mb-6');
+            if (welcomeMsg && (sender === 'user' || sender === 'ai')) {
+                welcomeMsg.remove();
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Event listeners
+        aiToggleBtn.addEventListener('click', toggleChatbot);
+        closeChatBtn.addEventListener('click', closeChatbot);
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Initialize
+        updateSendButton();
+
+        // Close modals when clicking outside
+        [githubModal, templatesModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal(modal);
+                }
+            });
+        });
+
+        // Auto-resize text editor and handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768 && chatbotPanel.classList.contains('right-0')) {
+                editorSection.style.display = 'none';
+            } else {
+                editorSection.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>

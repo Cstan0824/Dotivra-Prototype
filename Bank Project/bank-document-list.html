@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bank Management System - Documents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { inter: ['Inter','system-ui','sans-serif'] } } } };
+  </script>
+  <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');</style>
+  <script>
+    /*
+    function qs(sel, root=document){ return root.querySelector(sel); }
+    function qsa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+    function getParams(){ const p=new URLSearchParams(location.search); return Object.fromEntries(p.entries()); }
+    function getStore(){ try{ return JSON.parse(localStorage.getItem('projects')||'{}'); }catch{ return {}; } }
+    function setText(el, v){ if (el) el.textContent = v; }
+    function docHrefForTemplate(tpl){
+      const t=(tpl||'').toLowerCase();
+      if (t.includes('erd')) return '../template/bank-management-editor.html';
+      if (t.includes('migration')||t.includes('rfc')||t.includes('decision')||t.includes('bug')) return '../template/clinic-template.html';
+      return '../template/emptyEditor.html';
+    }
+    function roleOfTemplate(tpl){
+      const t=(tpl||'').toLowerCase();
+      if (t.includes('erd')||t.includes('api')||t.includes('migration')) return 'backend';
+      if (t.includes('ui')||t.includes('component')||t.includes('handoff')) return 'frontend';
+      if (t.includes('overview')||t.includes('release')||t.includes('decision')) return 'pm';
+      if (t.includes('test')||t.includes('bug')) return 'qa';
+      return 'se';
+    }
+    const TEMPLATES_BY_ROLE = {
+      se: ['Architecture Notes','RFC / Proposal','Checklist / Runbook','Code Review Guidelines','Performance Analysis'],
+      backend: ['API Contract','ERD Diagram','Migration Plan','Database Schema','Security Audit'],
+      frontend: ['UI Spec','Component RFC','Design Handoff Notes','Component Library','User Flow Documentation'],
+      pm: ['Project Overview','Release Checklist','Decision Log','Sprint Planning','Risk Assessment','Meeting Minutes'],
+      qa: ['Test Plan','Bug Triage Notes','Test Data Matrix','Test Strategy','Performance Test Report']
+    };
+    function samplePeople(){
+      return [
+        { initials:'AJ', name:'Alice Johnson', color:'bg-pink-500' },
+        { initials:'BS', name:'Bob Smith', color:'bg-teal-500' },
+        { initials:'CW', name:'Carol Wilson', color:'bg-blue-500' },
+        { initials:'DL', name:'David Lee', color:'bg-orange-500' },
+        { initials:'ED', name:'Emma Davis', color:'bg-purple-500' },
+        { initials:'FM', name:'Frank Miller', color:'bg-rose-500' }
+      ];
+    }
+    function pickPeople(seedStr, count=3){
+      const pool = samplePeople();
+      let hash = 0; for (let i=0;i<seedStr.length;i++){ hash = ((hash<<5)-hash) + seedStr.charCodeAt(i); hash|=0; }
+      const picks = [];
+      for (let i=0;i<count;i++) { const idx = Math.abs((hash + i*7) % pool.length); picks.push(pool[idx]); }
+      return picks;
+    }
+    function buildCard(doc){
+      const a = document.createElement('a');
+      const projectName = doc.project || '';
+      a.href = `${doc.href || docHrefForTemplate(doc.title)}?project=${encodeURIComponent(projectName)}&template=${encodeURIComponent(doc.title)}`;
+      a.className = 'group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white';
+      a.setAttribute('data-card','');
+      a.dataset.role = doc.role || roleOfTemplate(doc.title);
+      a.dataset.title = doc.title || '';
+      a.dataset.desc = (doc.desc || '') + ' ' + (doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '');
+      const people = pickPeople(doc.title + projectName);
+      const updated = doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '';
+      a.innerHTML = `
+        <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+          <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+            <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-500 w-3/5 rounded mb-1"></div>
+            <div class="space-y-1">
+              <div class="h-1 bg-gray-200 w-11/12 rounded"></div>
+              <div class="h-1 bg-gray-200 w-3/5 rounded"></div>
+              <div class="h-1 bg-gray-200 w-4/5 rounded"></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between">
+            <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">${doc.title}</h2>
+            <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+          </div>
+          <p class="mt-1 text-xs text-gray-500">Project: ${projectName || '—'}${updated ? ` · Updated ${updated}` : ''}</p>
+          <div class="mt-3 flex items-center -space-x-1">
+            ${people.map(p => `<div class=\"w-6 h-6 ${p.color} rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]\" title=\"${p.name}\">${p.initials}</div>`).join('')}
+          </div>
+        </div>
+      `;
+      return a;
+    }
+
+    // Generate random document counts for each role on every visit
+    function generateRandomDocCounts(projectName) {
+      const seed = Date.now() + (projectName || '').length; // Change seed every time
+      const random = (max) => Math.floor((seed * Math.random()) % (max + 1));
+      
+      return {
+        se: random(3), // 0-3 docs
+        backend: random(4), // 0-4 docs  
+        frontend: random(3), // 0-3 docs
+        pm: random(5), // 0-5 docs
+        qa: random(3) // 0-3 docs
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let { name } = getParams();
+      if (!name || !name.trim()) name = 'Project Name';
+      
+      // Always regenerate documents with random counts
+      const counts = generateRandomDocCounts(name);
+      const now = () => new Date().toISOString();
+      const add = (title) => ({
+        id: Math.random().toString(36).slice(2),
+        title,
+        role: roleOfTemplate(title),
+        href: docHrefForTemplate(title),
+        desc: '',
+        updatedAt: now()
+      });
+
+      const project = {
+        name,
+        desc: 'Decsciption of ' + name,
+        repo: '',
+        docs: []
+      };
+
+      // Generate documents based on random counts
+      Object.entries(counts).forEach(([role, count]) => {
+        const templates = TEMPLATES_BY_ROLE[role] || [];
+        const selectedTemplates = templates.slice(0, count);
+        selectedTemplates.forEach(template => {
+          project.docs.push(add(template));
+        });
+      });
+
+      setText(qs('#projectName'), project.name || 'Project');
+      if (project.repo) {
+        const repoEl = qs('#repoLink');
+        repoEl.href = project.repo;
+        repoEl.textContent = project.repo;
+        repoEl.classList.remove('hidden');
+      }
+      if (project.desc) { setText(qs('#projectDesc'), project.desc); }
+
+      // Populate cards into sections by role
+      const roles = ['se','backend','frontend','pm','qa'];
+      const roleNames = {
+        se: 'Software Engineer',
+        backend: 'Backend',
+        frontend: 'Frontend', 
+        pm: 'Project Manager',
+        qa: 'QA'
+      };
+
+      roles.forEach(role => {
+        const section = qs(`section[data-section-role="${role}"]`);
+        const grid = qs('.grid', section);
+        const roleTitle = qs('h3', section);
+        
+        grid.innerHTML = '';
+        const docs = (project.docs || []).filter(d => (d.role||'se') === role);
+        
+        // Update role title with count
+        roleTitle.textContent = `${roleNames[role]} (${docs.length})`;
+        
+        if (!docs.length) {
+          const emptyState = document.createElement('div');
+          emptyState.className = 'col-span-full';
+          emptyState.innerHTML = `
+            <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center bg-gray-50/50">
+              <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-file-alt text-gray-400 text-xl"></i>
+              </div>
+              <h4 class="text-sm font-medium text-gray-700 mb-2">No ${roleNames[role].toLowerCase()} documents</h4>
+              <p class="text-xs text-gray-500 mb-4">Get started by adding your first document for this role</p>
+              <button class="add-doc-btn inline-flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium border border-blue-200 hover:border-blue-300 rounded-md px-3 py-2 hover:bg-blue-50 transition-colors" data-role="${role}">
+                <i class="fas fa-plus text-xs"></i>
+                Add document
+              </button>
+            </div>
+          `;
+          grid.appendChild(emptyState);
+        } else {
+          docs.forEach(d => grid.appendChild(buildCard({ ...d, project: project.name })));
+        }
+      });
+
+      // Add click handlers for empty state add buttons
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.add-doc-btn')) {
+          const role = e.target.closest('.add-doc-btn').dataset.role;
+          openModal(role);
+        }
+      });
+
+      // Filtering
+      const searchInput = qs('#searchInput');
+      const roleFilter = qs('#roleFilter');
+      function applyFilters(){
+        const term = (searchInput.value||'').trim().toLowerCase();
+        const selectedRole = (roleFilter.value||'all').toLowerCase();
+        const sections = qsa('section[data-section-role]');
+        sections.forEach(section => {
+          const cards = qsa('[data-card]', section);
+          let any = false;
+          cards.forEach(card => {
+            const matchesRole = selectedRole==='all' || card.dataset.role===selectedRole;
+            const hay = `${card.dataset.title||''} ${card.dataset.desc||''}`.toLowerCase();
+            const matchesTerm = !term || hay.includes(term);
+            const show = matchesRole && matchesTerm;
+            card.style.display = show ? '' : 'none';
+            if (show) any = true;
+          });
+          section.style.display = any || cards.length===0 ? '' : 'none';
+        });
+      }
+      searchInput.addEventListener('input', applyFilters);
+      roleFilter.addEventListener('change', applyFilters);
+      applyFilters();
+
+      // Modal for adding a template under a chosen role (with template cards)
+      function openModal(prefRole){
+        const modal = document.getElementById('addModal');
+        const backdrop = document.getElementById('addModalBackdrop');
+        const roleSelect = document.getElementById('modalRole');
+        const templatesGrid = document.getElementById('modalTemplates');
+        const cancelBtn = document.getElementById('modalCancel');
+        const confirmBtn = document.getElementById('modalConfirm');
+
+        let selectedTemplate = '';
+
+        const roles = ['se','backend','frontend','pm','qa'];
+        roleSelect.innerHTML = '';
+        roles.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r;
+          opt.textContent = roleNames[r];
+          roleSelect.appendChild(opt);
+        });
+        if (prefRole) roleSelect.value = prefRole;
+
+        function renderTemplateCards(){
+          templatesGrid.innerHTML = '';
+          (TEMPLATES_BY_ROLE[roleSelect.value] || []).forEach(t => {
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'text-left border border-gray-200 rounded-md p-3 hover:border-blue-300 hover:shadow-sm transition relative';
+            card.innerHTML = `
+              <div class="h-16 bg-gray-50 border border-gray-100 rounded mb-2 p-2">
+                <div class="h-2 bg-blue-500/70 w-1/2 rounded mb-1"></div>
+                <div class="h-1 bg-gray-200 w-5/6 rounded mb-0.5"></div>
+                <div class="h-1 bg-gray-200 w-2/3 rounded"></div>
+              </div>
+              <div class="text-sm font-medium text-gray-800">${t}</div>
+            `;
+            card.onclick = () => {
+              selectedTemplate = t;
+              // mark selected
+              Array.from(templatesGrid.children).forEach(el => el.classList.remove('ring-2','ring-blue-500','bg-blue-50'));
+              card.classList.add('ring-2','ring-blue-500','bg-blue-50');
+              confirmBtn.disabled = false;
+            };
+            templatesGrid.appendChild(card);
+          });
+          confirmBtn.disabled = true;
+          selectedTemplate = '';
+        }
+        roleSelect.onchange = renderTemplateCards;
+        renderTemplateCards();
+
+        cancelBtn.onclick = () => { modal.classList.add('hidden'); backdrop.classList.add('hidden'); };
+        confirmBtn.onclick = () => {
+          const r = roleSelect.value;
+          const t = selectedTemplate;
+          if (!t) return;
+          
+          // Navigate to the appropriate editor
+          const href = docHrefForTemplate(t);
+          window.location.href = `${href}?project=${encodeURIComponent(project.name)}&template=${encodeURIComponent(t)}`;
+        };
+
+        modal.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+      }
+
+      // Global open button
+      const openBtn = document.getElementById('openAddModal');
+      if (openBtn) openBtn.addEventListener('click', () => openModal());
+
+      // Make openModal globally accessible
+      window.openModal = openModal;
+    });
+    */
+  </script>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="text-xl font-semibold text-blue-600">
+        <i class="fas fa-folder-open mr-2"></i>Dotivra
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="projectOverview.html" class="text-sm text-gray-600 hover:text-blue-600">← Back to Projects</a>
+        <span class="text-gray-700">John Doe</span>
+        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 id="projectName" class="text-lg font-semibold">Bank Management System</h1>
+        <p id="projectDesc" class="text-sm text-gray-600">A comprehensive bank management system for accounts, transactions, and reporting.</p>
+        <a id="repoLink" href="#" target="_blank" class="text-xs text-blue-600 underline hidden"></a>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium uppercase tracking-wide rounded-full">Active</div>
+        <div class="flex items-center -space-x-1">
+          <div class="w-6 h-6 bg-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Alice Johnson">AJ</div>
+          <div class="w-6 h-6 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Bob Smith">BS</div>
+          <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Carol Wilson">CW</div>
+          <div class="w-6 h-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 text-xs">+2</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-col sm:flex-row gap-3 sm:items-center mb-6">
+      <div class="flex-1">
+        <label for="searchInput" class="sr-only">Search documents</label>
+        <input id="searchInput" type="text" placeholder="Search documents..." class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+      <div>
+        <select id="roleFilter" class="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <option value="all">All roles</option>
+          <option value="developer">Developer</option>
+          <option value="user">User</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Role Sections -->
+    <div id="roleSections" class="space-y-8">
+      <section data-section-role="developer">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center ">
+          <i class="fas fa-code text-blue-600"></i>
+          Developer (4)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+      
+      <section data-section-role="user">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+          <i class="fas fa-user-friends text-green-600"></i>
+          User (1)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Scripts are in the head; no additional scripts needed here -->
+</body>
+</html>

@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Management System - Developer Manual</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+            'times': ['Times New Roman', 'serif']
+          },
+          colors: {
+            'google-blue': '#1a73e8',
+            'google-blue-dark': '#1557b0',
+            'google-gray': '#5f6368',
+            'google-gray-dark': '#3c4043',
+            'google-gray-light': '#f1f3f4',
+            'google-border': '#e8eaed',
+            'google-bg': '#f9fbfd'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .document-shadow { box-shadow: 0 0 15px rgba(0,0,0,0.08); }
+    .toolbar-btn{ transition: all .15s ease; }
+    .toolbar-btn:hover{ background-color:#f1f3f4 !important; }
+    .editor-transition { transition: width 0.3s ease; }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-ai {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 18px 18px 18px 4px;
+    }
+  </style>
+</head>
+<body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="flex-1 flex flex-col bg-white editor-transition" id="editorSection">
+      <!-- Header -->
+      <div id="topHeader" class="bg-white border-b border-google-border">
+        <div class="px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-google-blue text-white flex items-center justify-center text-sm font-semibold">D</div>
+            <div
+              class="text-sm md:text-base font-medium text-google-gray-dark bg-transparent px-1 truncate max-w-[220px] md:max-w-[320px] lg:max-w-[400px]"
+              id="docTitle"
+            >
+              Clinic Management System - Developer Manual
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="shareBtn" class="inline-flex items-center gap-2 px-4 py-2 bg-google-blue text-white text-sm rounded-full hover:bg-google-blue-dark">
+              Share
+            </button>
+            <div class="flex -space-x-2" id="avatarGroup">
+              <div class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Alice Johnson">AJ</div>
+              <div class="w-8 h-8 rounded-full bg-teal-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Bob Smith">BS</div>
+              <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Carol Wilson">CW</div>
+            </div>
+            <button id="aiOpenV2" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              AI Assistant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main workspace: Tools + Editor -->
+      <div class="flex min-h-0 flex-1">
+        <!-- Editor Area -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <!-- Google Docs Style Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-1">
+            <div class="flex items-center gap-1">
+              <!-- File Menu -->
+              <div class="flex items-center gap-1">
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">File</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Edit</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">View</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Insert</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Format</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Tools</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Extensions</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Help</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formatting Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-2">
+            <div class="flex items-center gap-1">
+              <!-- Undo/Redo -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Undo (Ctrl+Z)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Redo (Ctrl+Y)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Print (Ctrl+P)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Zoom -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Zoom">
+                <option>100%</option>
+                <option>125%</option>
+                <option>150%</option>
+                <option>200%</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Styles -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[120px]" title="Styles">
+                <option>Normal text</option>
+                <option>Title</option>
+                <option>Subtitle</option>
+                <option>Heading 1</option>
+                <option>Heading 2</option>
+                <option>Heading 3</option>
+              </select>
+
+              <!-- Font Family -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[140px]" title="Font">
+                <option>Times New Roman</option>
+                <option>Arial</option>
+                <option>Calibri</option>
+                <option>Georgia</option>
+                <option>Verdana</option>
+              </select>
+
+              <!-- Font Size -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Font size">
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option selected>12</option>
+                <option>14</option>
+                <option>16</option>
+                <option>18</option>
+                <option>24</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Text Formatting -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bold (Ctrl+B)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M8 4h3a3 3 0 010 6H8zM8 10h4a3 3 0 010 6H8z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Italic (Ctrl+I)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4h6v2h-2.586l-3.828 8H16v2H8v-2h2.586l3.828-8H10z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Underline (Ctrl+U)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4h2v5a3 3 0 006 0V4h2v5a5 5 0 11-10 0V4zM4 16h12v2H4z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Text color">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Alignment -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align left (Ctrl+Shift+L)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM3 7h10v2H3zM3 10h14v2H3zM3 13h10v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align center (Ctrl+Shift+E)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM5 7h10v2H5zM3 10h14v2H3zM5 13h10v2H5z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align right (Ctrl+Shift+R)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM7 7h10v2H7zM3 10h14v2H3zM7 13h10v2H7z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Lists -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bulleted list (Ctrl+Shift+8)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4h10v2H7zM3 4h2v2H3zM7 9h10v2H7zM3 9h2v2H3zM7 14h10v2H7zM3 14h2v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Numbered list (Ctrl+Shift+7)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h1v5H3zM5 4h12v2H5zM3 10h1v5H3zM5 10h12v2H5zM3 16h1v1H3zM5 16h12v2H5z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- More tools -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert link (Ctrl+K)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert image">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document -->
+          <div class="flex-1 overflow-auto bg-google-bg px-4 py-8 md:px-12 lg:px-16">
+            <div class="mx-auto bg-white document-shadow w-[816px] min-h-[1056px]">
+              <div id="page" class="font-times text-gray-900" style="padding: 72px 64px; font-size: 12pt; line-height: 1.5;">
+                
+                <h1 class="text-center font-bold text-xl mb-6">Clinic Management System — Developer Manual</h1>
+
+                <h2 class="font-bold text-lg mt-8 mb-4">Table of Contents</h2>
+                <ol class="list-decimal ml-6 mb-6">
+                  <li><a href="#system-overview" class="text-google-blue hover:underline">System Overview</a></li>
+                  <li><a href="#architecture-flow" class="text-google-blue hover:underline">Architecture & Flow</a></li>
+                  <li><a href="#module-validation" class="text-google-blue hover:underline">Module-by-Module Validation Details</a></li>
+                  <li><a href="#database-schema" class="text-google-blue hover:underline">Database Schema & Relationships</a></li>
+                  <li><a href="#data-flow" class="text-google-blue hover:underline">Data Flow & Table Interactions</a></li>
+                </ol>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 id="system-overview" class="font-bold text-lg mt-8 mb-4">1. System Overview</h2>
+                
+                <p class="mb-4">The Clinic Management System is a comprehensive web-based healthcare management application built with Java Enterprise Edition (Jakarta EE) technology stack. The system provides complete management capabilities for healthcare clinics including patient management, doctor scheduling, medicine inventory, consultation management, and detailed analytics.</p>
+
+                <h3 class="font-bold mt-6 mb-3">Project Purpose and Functionality</h3>
+                <p class="mb-2">The system is designed to streamline healthcare clinic operations by providing:</p>
+                <ul class="list-disc ml-6 mb-4">
+                  <li><strong>Patient Management:</strong> Complete patient registration, medical history tracking, and demographic analysis</li>
+                  <li><strong>Staff Management:</strong> Doctor and administrative staff profiles, scheduling, and performance tracking</li>
+                  <li><strong>Medicine & Inventory:</strong> Comprehensive stock management, prescription tracking, and reorder alerts</li>
+                  <li><strong>Consultation System:</strong> Appointment scheduling, medical records, and medical certificate (MC) generation</li>
+                  <li><strong>Comprehensive Reporting:</strong> Analytics, trends, and performance metrics for informed decision-making</li>
+                </ul>
+
+                <h3 class="font-bold mt-6 mb-3">Technology Stack and Architecture Patterns</h3>
+                <ul class="list-disc ml-6 mb-4">
+                  <li><strong>Backend:</strong> Java 17, Jakarta EE 10, JAX-RS, JPA/Hibernate 6.6.9</li>
+                  <li><strong>Database:</strong> MySQL 8.0+ with Hibernate ORM</li>
+                  <li><strong>Application Server:</strong> GlassFish Server</li>
+                  <li><strong>Frontend:</strong> JSP, Tailwind CSS, Chart.js, JavaScript ES6+</li>
+                  <li><strong>Build Tool:</strong> Maven 3.13.0</li>
+                  <li><strong>Containerization:</strong> Docker with docker-compose</li>
+                  <li><strong>Authentication:</strong> Session-based authentication with role-based access control</li>
+                </ul>
+
+                <h3 class="font-bold mt-6 mb-3">System Requirements and Dependencies</h3>
+                <ul class="list-disc ml-6 mb-4">
+                  <li><strong>Java Development Kit (JDK) 17</strong></li>
+                  <li><strong>Docker Desktop</strong> for containerization</li>
+                  <li><strong>MySQL Database 8.0+</strong> (handled by Docker)</li>
+                  <li><strong>GlassFish Server</strong> for application deployment</li>
+                  <li><strong>Minimum 8GB RAM</strong> (16GB recommended)</li>
+                  <li><strong>Modern web browser</strong> with JavaScript enabled</li>
+                </ul>
+
+                <h3 class="font-bold mt-6 mb-3">Key Features and Capabilities</h3>
+                <ul class="list-disc ml-6 mb-4">
+                  <li><strong>Modern UI/UX:</strong> Responsive design with Tailwind CSS and real-time data updates</li>
+                  <li><strong>Role-based Access Control:</strong> Different interfaces for staff and patients</li>
+                  <li><strong>Real-time Analytics:</strong> Live data visualization with Chart.js</li>
+                  <li><strong>PDF Export:</strong> Report generation capabilities</li>
+                  <li><strong>Session Management:</strong> Secure authentication with configurable timeouts</li>
+                  <li><strong>Data Validation:</strong> Comprehensive input validation and business rule enforcement</li>
+                </ul>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 id="architecture-flow" class="font-bold text-lg mt-8 mb-4">2. Architecture & Flow</h2>
+
+                <h3 class="font-bold mt-6 mb-3">System Architecture</h3>
+                <div class="mermaid mb-6">
+graph TB
+    subgraph "Frontend Layer"
+        UI[Web Interface - JSP]
+        JS[Client-side JavaScript]
+        CSS[Tailwind CSS]
+    end
+    
+    subgraph "Presentation Layer"
+        REST[REST API Endpoints]
+        Auth[Authentication Service]
+        Filter[Request Filtering]
+    end
+    
+    subgraph "Business Logic Layer"
+        PatientService[Patient Management]
+        ConsultationService[Consultation Service]
+        MedicineService[Medicine & Inventory]
+        ReportService[Reporting & Analytics]
+    end
+    
+    subgraph "Data Access Layer"
+        Repositories[Repository Pattern]
+        JPA[JPA/Hibernate]
+        CustomUtils[Custom Utilities]
+    end
+    
+    subgraph "Database Layer"
+        MySQL[(MySQL Database)]
+        Tables[Entity Tables]
+        Views[Database Views]
+    end
+    
+    UI --> REST
+    REST --> Auth
+    Auth --> PatientService
+    Auth --> ConsultationService
+    Auth --> MedicineService
+    Auth --> ReportService
+    PatientService --> Repositories
+    ConsultationService --> Repositories
+    MedicineService --> Repositories
+    ReportService --> Repositories
+    Repositories --> JPA
+    JPA --> MySQL
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">User Authentication Flow</h3>
+                <div class="mermaid mb-6">
+flowchart TD
+    A[User Login Request] --> B{User Type?}
+    B -->|Staff| C[Staff Authentication]
+    B -->|Patient| D[Patient Authentication]
+    
+    C --> E{Valid Credentials?}
+    D --> F{Valid Credentials?}
+    
+    E -->|Yes| G[Create Staff Session]
+    E -->|No| H[Return Error]
+    F -->|Yes| I[Create Patient Session]
+    F -->|No| H
+    
+    G --> J[Set Session Attributes]
+    I --> J
+    J --> K[Redirect to Dashboard]
+    
+    L[Session Validation] --> M{Valid Session?}
+    M -->|Yes| N[Allow Access]
+    M -->|No| O[Redirect to Login]
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">Data Flow Architecture</h3>
+                <div class="mermaid mb-6">
+sequenceDiagram
+    participant U as User
+    participant UI as Frontend
+    participant API as REST API
+    participant BL as Business Logic
+    participant DB as Database
+    
+    U->>UI: User Action
+    UI->>API: HTTP Request
+    API->>BL: Process Request
+    BL->>DB: Database Query
+    DB-->>BL: Query Results
+    BL-->>API: Processed Data
+    API-->>UI: JSON Response
+    UI-->>U: Updated Interface
+                </div>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 id="module-validation" class="font-bold text-lg mt-8 mb-4">3. Module-by-Module Validation Details</h2>
+
+                <h3 class="font-bold mt-6 mb-3">1. Patient Management Module</h3>
+                <p class="mb-2"><strong>Purpose and Functionality:</strong> The Patient Management Module handles patient registration, profile management, medical history tracking, and demographic analysis.</p>
+
+                <h4 class="font-semibold mt-4 mb-2">Form Fields and Validation Rules</h4>
+                <div class="overflow-x-auto mb-4">
+                  <table class="w-full border-collapse border border-gray-300 text-sm">
+                    <thead>
+                      <tr class="bg-gray-50">
+                        <th class="border border-gray-300 px-2 py-1 text-left">Field</th>
+                        <th class="border border-gray-300 px-2 py-1 text-left">Type</th>
+                        <th class="border border-gray-300 px-2 py-1 text-left">Validation Rules</th>
+                        <th class="border border-gray-300 px-2 py-1 text-left">Business Rules</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>patientID</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Auto-generated</td>
+                        <td class="border border-gray-300 px-2 py-1">Format: PA + 4-digit number</td>
+                        <td class="border border-gray-300 px-2 py-1">Unique identifier, auto-generated</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>firstName</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Text</td>
+                        <td class="border border-gray-300 px-2 py-1">Required, max 50 characters</td>
+                        <td class="border border-gray-300 px-2 py-1">Cannot be empty</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>lastName</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Text</td>
+                        <td class="border border-gray-300 px-2 py-1">Required, max 50 characters</td>
+                        <td class="border border-gray-300 px-2 py-1">Cannot be empty</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>email</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Email</td>
+                        <td class="border border-gray-300 px-2 py-1">Required, valid email format</td>
+                        <td class="border border-gray-300 px-2 py-1">Must be unique, @Email annotation</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>studentId</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Text</td>
+                        <td class="border border-gray-300 px-2 py-1">Required, unique</td>
+                        <td class="border border-gray-300 px-2 py-1">Format: 25WMR + 5-digit number</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1"><code>bloodType</code></td>
+                        <td class="border border-gray-300 px-2 py-1">Dropdown</td>
+                        <td class="border border-gray-300 px-2 py-1">Required</td>
+                        <td class="border border-gray-300 px-2 py-1">Values: A+, A-, B+, B-, AB+, AB-, O+, O-</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h4 class="font-semibold mt-4 mb-2">Business Rules and Constraints</h4>
+                <ul class="list-disc ml-6 mb-4">
+                  <li>Patient ID is auto-generated using <code>PrefixIdGenerator</code> with format "PA" + sequential number</li>
+                  <li>Student ID must be unique across all patients</li>
+                  <li>Contact numbers must follow Malaysian phone number format</li>
+                  <li>Email addresses must be unique and valid format</li>
+                  <li>Age is automatically calculated from date of birth</li>
+                  <li>Critical fields (patientID, studentId) cannot be modified after creation</li>
+                  <li>Emergency contact number must be different from patient's own contact number</li>
+                  <li>Blood type must be one of the standard 8 blood types</li>
+                </ul>
+
+                <h3 class="font-bold mt-6 mb-3">2. Medicine & Inventory Module</h3>
+                <p class="mb-2"><strong>Purpose and Functionality:</strong> The Medicine & Inventory Module manages medicine stock, inventory tracking, reorder alerts, and FIFO (First In, First Out) dispensing system.</p>
+
+                <h4 class="font-semibold mt-4 mb-2">Key Features</h4>
+                <ul class="list-disc ml-6 mb-4">
+                  <li><strong>FIFO Stock Management:</strong> Medicine dispensing follows First In, First Out method based on expiry dates</li>
+                  <li><strong>Automatic Reorder Alerts:</strong> System triggers alerts when stock falls below reorder level</li>
+                  <li><strong>Batch Tracking:</strong> Each medicine order is tracked as a separate batch with expiry dates</li>
+                  <li><strong>Stock Calculation:</strong> Total stock is calculated from all received, non-expired batches</li>
+                  <li><strong>Supplier Integration:</strong> Orders are linked to suppliers for procurement management</li>
+                </ul>
+
+                <h3 class="font-bold mt-6 mb-3">3. Consultation Management Module</h3>
+                <p class="mb-2"><strong>Purpose and Functionality:</strong> The Consultation Management Module handles patient consultations, medical records, prescriptions, and medical certificate (MC) generation.</p>
+
+                <h4 class="font-semibold mt-4 mb-2">Medical Certificate (MC) Generation</h4>
+                <p class="mb-2">MC can only be generated for consultations with assigned doctors, symptoms, and diagnosis:</p>
+                <ul class="list-disc ml-6 mb-4">
+                  <li>Doctor must be assigned to the consultation</li>
+                  <li>Symptoms must be recorded in the consultation</li>
+                  <li>Diagnosis must be recorded in the consultation</li>
+                  <li>Start date must be before or equal to end date for MC</li>
+                  <li>MC ID format: "MC" + consultationID</li>
+                </ul>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 id="database-schema" class="font-bold text-lg mt-8 mb-4">4. Database Schema & Relationships</h2>
+
+                <h3 class="font-bold mt-6 mb-3">Entity Relationship Diagram</h3>
+                <div class="mermaid mb-6">
+erDiagram
+    Patient ||--o{ Consultation : "has"
+    Patient ||--o{ Appointment : "schedules"
+    Patient ||--o{ Treatment : "receives"
+    Staff ||--o{ Consultation : "conducts"
+    Staff ||--o{ Consultation : "doctor_conducts"
+    Staff ||--o{ Orders : "places"
+    Staff ||--o{ Schedule : "doctor1"
+    Staff ||--o{ Schedule : "doctor2"
+    Consultation ||--o{ Prescription : "prescribes"
+    Consultation ||--o{ Treatment : "includes"
+    Consultation ||--o| Bill : "bills"
+    Consultation ||--o| Appointment : "follow_up"
+    Medicine ||--o{ Prescription : "prescribed_in"
+    Medicine ||--o{ Orders : "ordered_in"
+    Supplier ||--o{ Orders : "supplies"
+    
+    Patient {
+        string patientID PK
+        string firstName
+        string lastName
+        string gender
+        string dateOfBirth
+        int age
+        string nationality
+        string idType
+        string idNumber UK
+        string studentId UK
+        string contactNumber
+        string email UK
+        text address
+        string emergencyContactName
+        string emergencyContactNumber
+        string allergies
+        string bloodType
+        string password
+    }
+    
+    Staff {
+        string staffID PK
+        string firstName
+        string lastName
+        string gender
+        date dateOfBirth
+        string nationality
+        string idType
+        string idNumber UK
+        string contactNumber
+        string email UK
+        text address
+        string position
+        string medicalLicenseNumber
+        string password
+        date employmentDate
+    }
+    
+    Medicine {
+        string medicineID PK
+        string medicineName
+        text description
+        string unit
+        int totalStock
+        int reorderLevel
+        decimal sellingPrice
+    }
+    
+    Orders {
+        string ordersID PK
+        string medicineID FK
+        string supplierID FK
+        string staffID FK
+        date orderDate
+        string orderStatus
+        decimal unitPrice
+        int quantity
+        decimal totalAmount
+        date expiryDate
+        int stock
+    }
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">Key Database Tables</h3>
+
+                <h4 class="font-semibold mt-4 mb-2">Patient Table</h4>
+                <div class="bg-gray-50 p-4 rounded mb-4">
+                  <pre class="text-sm overflow-x-auto"><code>CREATE TABLE Patient (
+    patientID VARCHAR(10) PRIMARY KEY,           -- Format: PA0001
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    gender VARCHAR(10) NOT NULL,                 -- Male/Female
+    dateOfBirth VARCHAR(20) NOT NULL,
+    age INT NOT NULL,
+    nationality VARCHAR(50) NOT NULL,
+    idType VARCHAR(20) NOT NULL,                 -- IC/Passport
+    idNumber VARCHAR(20) NOT NULL UNIQUE,
+    studentId VARCHAR(15) NOT NULL UNIQUE,       -- Format: 25WMR00001
+    contactNumber VARCHAR(15) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    address TEXT NOT NULL,
+    emergencyContactName VARCHAR(100) NOT NULL,
+    emergencyContactNumber VARCHAR(15) NOT NULL,
+    allergies VARCHAR(200),                      -- Can be "None"
+    bloodType VARCHAR(5) NOT NULL,               -- A+, A-, B+, B-, AB+, AB-, O+, O-
+    password VARCHAR(100) NOT NULL
+);</code></pre>
+                </div>
+
+                <h4 class="font-semibold mt-4 mb-2">Medicine Table</h4>
+                <div class="bg-gray-50 p-4 rounded mb-4">
+                  <pre class="text-sm overflow-x-auto"><code>CREATE TABLE Medicine (
+    medicineID VARCHAR(10) PRIMARY KEY,          -- Format: ME0001
+    medicineName VARCHAR(100) NOT NULL,
+    description TEXT,
+    unit VARCHAR(20) NOT NULL,                   -- tablet, mg, ml, capsule
+    totalStock INT,                              -- Calculated field (non-persistent)
+    reorderLevel INT NOT NULL DEFAULT 0,
+    sellingPrice DECIMAL(10,2) NOT NULL
+);</code></pre>
+                </div>
+
+                <h4 class="font-semibold mt-4 mb-2">Orders Table (Medicine Batches)</h4>
+                <div class="bg-gray-50 p-4 rounded mb-4">
+                  <pre class="text-sm overflow-x-auto"><code>CREATE TABLE Orders (
+    ordersID VARCHAR(10) PRIMARY KEY,            -- Format: OR0001
+    medicineID VARCHAR(10) NOT NULL,
+    supplierID VARCHAR(10) NOT NULL,
+    staffID VARCHAR(10) NOT NULL,                -- Staff who placed the order
+    orderDate DATE NOT NULL,
+    orderStatus VARCHAR(20) NOT NULL,            -- Pending/Received/Cancelled
+    unitPrice DECIMAL(10,2) NOT NULL,
+    quantity INT NOT NULL,
+    totalAmount DECIMAL(10,2) NOT NULL,
+    expiryDate DATE NOT NULL,
+    stock INT NOT NULL,                          -- Current stock from this batch
+    FOREIGN KEY (medicineID) REFERENCES Medicine(medicineID),
+    FOREIGN KEY (supplierID) REFERENCES Supplier(supplierID),
+    FOREIGN KEY (staffID) REFERENCES Staff(staffID)
+);</code></pre>
+                </div>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 id="data-flow" class="font-bold text-lg mt-8 mb-4">5. Data Flow & Table Interactions</h2>
+
+                <h3 class="font-bold mt-6 mb-3">Patient Registration Flow</h3>
+                <div class="mermaid mb-6">
+sequenceDiagram
+    participant U as User
+    participant UI as Frontend
+    participant API as Patient API
+    participant BL as Business Logic
+    participant DB as Database
+    
+    U->>UI: Fill registration form
+    UI->>API: POST /patients
+    API->>BL: Validate patient data
+    BL->>DB: Generate patientID using PrefixIdGenerator
+    BL->>DB: Insert patient record
+    DB-->>BL: Confirm insertion
+    BL-->>API: Return created patient
+    API-->>UI: Success response
+    UI-->>U: Registration complete
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">Medicine Stock Management Flow</h3>
+                <div class="mermaid mb-6">
+flowchart TD
+    A[Medicine Stock Check] --> B{Stock > Reorder Level?}
+    B -->|Yes| C[Stock Sufficient]
+    B -->|No| D[Generate Reorder Alert]
+    
+    D --> E[Create Purchase Order]
+    E --> F[Order from Supplier]
+    F --> G[Receive Order]
+    G --> H[Update Stock Levels]
+    
+    I[Prescription Dispensing] --> J{Sufficient Stock?}
+    J -->|Yes| K[Deduct Stock - FIFO Method]
+    J -->|No| L[Stock Out Error]
+    
+    K --> M[Update Batch Quantities]
+    M --> N[Check Expiry Dates]
+    N --> O[Remove Expired Batches]
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">Medical Certificate (MC) Generation Flow</h3>
+                <div class="mermaid mb-6">
+flowchart TD
+    A[Consultation Complete] --> B{MC Required?}
+    B -->|No| C[End Process]
+    B -->|Yes| D{Prerequisites Met?}
+    
+    D -->|No| E[Show Error: Missing Requirements]
+    D -->|Yes| F[Generate MC ID]
+    
+    F --> G[Set MC Dates]
+    G --> H[Validate Date Range]
+    H --> I{Valid Dates?}
+    
+    I -->|No| J[Show Error: Invalid Date Range]
+    I -->|Yes| K[Save MC to Database]
+    
+    K --> L[Update Consultation Record]
+    L --> M[Generate MC Document]
+    M --> N[MC Generation Complete]
+                </div>
+
+                <h3 class="font-bold mt-6 mb-3">Key Data Flow Patterns</h3>
+                <ol class="list-decimal ml-6 mb-4">
+                  <li><strong>CRUD Operations:</strong> Standard Create, Read, Update, Delete operations for all entities</li>
+                  <li><strong>Transaction Management:</strong> Critical operations use JTA transactions for consistency</li>
+                  <li><strong>Data Validation:</strong> Input validation at API level, business rule validation at service level</li>
+                  <li><strong>Error Handling:</strong> Comprehensive error responses with meaningful messages</li>
+                  <li><strong>Audit Trail:</strong> Session tracking and user action logging</li>
+                  <li><strong>Real-time Updates:</strong> Stock levels and appointment status updates in real-time</li>
+                </ol>
+
+                <h3 class="font-bold mt-6 mb-3">Performance Optimization Notes</h3>
+                <ol class="list-decimal ml-6 mb-4">
+                  <li><strong>Indexing:</strong> Primary keys and foreign keys are automatically indexed</li>
+                  <li><strong>Query Optimization:</strong> Repository pattern with optimized queries for common operations</li>
+                  <li><strong>Connection Pooling:</strong> Hibernate connection pooling for database efficiency</li>
+                  <li><strong>Caching:</strong> Application-level caching for frequently accessed data</li>
+                  <li><strong>Batch Operations:</strong> Bulk operations for data import and updates</li>
+                  <li><strong>Lazy Loading:</strong> Entity relationships loaded on-demand to reduce memory usage</li>
+                </ol>
+
+                <hr class="my-6 border-gray-300">
+
+                <h2 class="font-bold text-lg mt-8 mb-4">Important Notes</h2>
+
+                <h3 class="font-bold mt-6 mb-3">Missing Model Implementations</h3>
+                <p class="mb-2">The following modules are documented in the validation sections but do not have corresponding model implementations in the actual codebase:</p>
+                <ol class="list-decimal ml-6 mb-4">
+                  <li><strong>Queue Management Module</strong> - Referenced in validation but no Queue model exists</li>
+                  <li><strong>Reporting & Analytics Module</strong> - Referenced in validation but no Report model exists</li>
+                  <li><strong>Authentication & Authorization Module</strong> - Referenced in validation but no Session model exists</li>
+                </ol>
+                <p class="mb-4">These modules represent planned functionality that would require additional model implementations to be fully functional. The validation logic documented for these modules should be considered as design specifications for future implementation.</p>
+
+                <h3 class="font-bold mt-6 mb-3">Model-Documentation Alignment</h3>
+                <p class="mb-4">The database schema and validation logic have been updated to match the actual model implementations found in the <code>src/main/java/models/</code> directory. All field names, data types, and relationships now accurately reflect the current codebase.</p>
+
+                <hr class="my-6 border-gray-300">
+
+                <div class="text-center mt-8 text-sm text-gray-600">
+                  <p><strong>Document Version:</strong> 1.1</p>
+                  <p><strong>Last Updated:</strong> December 2024</p>
+                  <p><strong>Maintained By:</strong> Development Team</p>
+                  <p><strong>Contact:</strong> Development Team</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <aside id="aiSidebar" class="w-0 overflow-hidden bg-white border-l border-google-border shadow-xl flex flex-col editor-transition">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b border-google-border bg-gradient-to-r from-google-blue to-blue-600 text-white">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">AI Assistant</div>
+              <div class="text-xs opacity-80 truncate">Ready to help with your document</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="aiCloseV2" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors" title="Close">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="flex-1 min-h-0 flex flex-col w-96">
+        <div id="aiMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="chat-bubble-ai p-3 max-w-[280px]">
+              <div class="text-sm text-gray-800">
+                👋 Hello! I'm your AI writing assistant. I can help you with writing, editing, and document formatting. How can I assist you today?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-google-border bg-white flex-shrink-0">
+          <div class="relative mb-3">
+            <textarea id="aiInput" rows="1" class="w-full resize-none border border-google-border rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent" placeholder="Type your message..." style="min-height: 40px; max-height: 120px;"></textarea>
+            <button id="aiSend" class="absolute right-2 bottom-2 w-8 h-8 bg-google-blue text-white rounded-md hover:bg-google-blue-dark transition-colors flex items-center justify-center" title="Send message">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </button>
+          </div>
+          <button id="githubConnect" class="w-full flex items-center justify-center gap-2 px-2 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium" title="Connect GitHub">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+            </svg>
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Simple AI chat functionality
+    (function(){
+      const input = document.getElementById('aiInput');
+      const send = document.getElementById('aiSend');
+      const box = document.getElementById('aiMessages');
+      const panel = document.getElementById('aiSidebar');
+      const closeBtn = document.getElementById('aiCloseV2');
+      const openBtn = document.getElementById('aiOpenV2');
+      const githubBtn = document.getElementById('githubConnect');
+      
+      // Auto-resize textarea
+      function autoResize() {
+        input.style.height = 'auto';
+        const newHeight = Math.min(input.scrollHeight, 120);
+        input.style.height = newHeight + 'px';
+        
+        const lines = Math.ceil((newHeight - 16) / 20);
+        if (lines > 1) {
+          send.style.bottom = '10px';
+        } else {
+          send.style.bottom = '8px';
+        }
+      }
+      
+      // Add message to chat
+      function addMessage(type, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3 ' + (type === 'user' ? 'flex-row-reverse' : '');
+        
+        const avatar = document.createElement('div');
+        avatar.className = type === 'user' 
+          ? 'w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0'
+          : 'w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0';
+        avatar.innerHTML = type === 'user' 
+          ? '<span class="text-xs font-semibold text-gray-600">You</span>'
+          : '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        
+        const bubble = document.createElement('div');
+        bubble.className = type === 'user' ? 'chat-bubble-user text-white p-3 max-w-[280px]' : 'chat-bubble-ai p-3 max-w-[280px]';
+        
+        const content = document.createElement('div');
+        content.className = 'text-sm';
+        content.textContent = text;
+        
+        bubble.appendChild(content);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        box.appendChild(messageDiv);
+        box.scrollTop = box.scrollHeight;
+      }
+      
+      // Send message
+      function onSend() {
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        input.value = '';
+        autoResize();
+        
+        // Simple AI responses
+        setTimeout(() => {
+          addMessage('ai', 'Thanks for your message! I can help you with writing and editing tasks.');
+        }, 500);
+      }
+      
+      // Event listeners
+      input.addEventListener('input', autoResize);
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      });
+      send.addEventListener('click', onSend);
+      
+      // Open/Close sidebar
+      if (openBtn && panel) {
+        openBtn.addEventListener('click', () => {
+          panel.classList.remove('w-0');
+          panel.classList.add('w-96');
+          openBtn.style.display = 'none';
+          setTimeout(() => input.focus(), 300);
+        });
+      }
+      
+      if (closeBtn && panel) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('w-96');
+          panel.classList.add('w-0');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+        });
+      }
+      
+      if (githubBtn) {
+        githubBtn.addEventListener('click', () => {
+          addMessage('ai', '🔗 GitHub integration prototype ready.');
+        });
+      }
+      
+      autoResize();
+    })();
+  </script>
+  
+  <!-- Mermaid for diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: true, securityLevel: 'loose', theme: 'default' });
+    }
+  </script>
+
+</body>
+</html>

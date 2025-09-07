@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Editor V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'google-sans': ['Google Sans', 'Roboto', 'Arial', 'sans-serif'],
+            'times': ['Times New Roman', 'serif']
+          },
+          colors: {
+            'google-blue': '#1a73e8',
+            'google-blue-dark': '#1557b0',
+            'google-gray': '#5f6368',
+            'google-gray-dark': '#3c4043',
+            'google-gray-light': '#f1f3f4',
+            'google-border': '#e8eaed',
+            'google-bg': '#f9fbfd'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .document-shadow { box-shadow: 0 0 15px rgba(0,0,0,0.08); }
+    .toolbar-btn{ transition: all .15s ease; }
+    .toolbar-btn:hover{ background-color:#f1f3f4 !important; }
+    .editor-transition { transition: width 0.3s ease; }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+      border-radius: 18px 18px 4px 18px;
+    }
+    .chat-bubble-ai {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 18px 18px 18px 4px;
+    }
+    .ai-maximized {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 50 !important;
+    }
+  </style>
+</head>
+<body class="font-google-sans bg-google-bg h-screen overflow-hidden">
+  <div class="flex h-screen">
+    <div class="flex-1 flex flex-col bg-white editor-transition" id="editorSection">
+      <!-- Header -->
+      <div id="topHeader" class="bg-white border-b border-google-border">
+        <div class="px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-google-blue text-white flex items-center justify-center text-sm font-semibold">D</div>
+            <input id="docTitle" class="text-sm md:text-base font-medium text-google-gray-dark bg-transparent border-b border-transparent focus:border-google-blue focus:outline-none px-1" value="Report" />
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="shareBtn" class="inline-flex items-center gap-2 px-4 py-2 bg-google-blue text-white text-sm rounded-full hover:bg-google-blue-dark">
+              Share
+            </button>
+            <div class="flex -space-x-2" id="avatarGroup">
+              <div class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Alice Johnson">AJ</div>
+              <div class="w-8 h-8 rounded-full bg-teal-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Bob Smith">BS</div>
+              <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white text-white text-xs flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" title="Carol Wilson">CW</div>
+            </div>
+            <button id="aiOpenV2" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-google-border text-sm text-google-gray hover:bg-google-gray-light">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              AI Assistant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main workspace: Tools + Editor -->
+      <div class="flex min-h-0 flex-1">
+        <!-- Editor Area -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <!-- Google Docs Style Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-1">
+            <div class="flex items-center gap-1">
+              <!-- File Menu -->
+              <div class="flex items-center gap-1">
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">File</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Edit</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">View</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Insert</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Format</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Tools</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Extensions</button>
+                <button class="toolbar-btn px-2 py-1 text-sm text-google-gray hover:bg-google-gray-light rounded">Help</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formatting Toolbar -->
+          <div class="bg-white border-b border-google-border px-4 py-2">
+            <div class="flex items-center gap-1">
+              <!-- Undo/Redo -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Undo (Ctrl+Z)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Redo (Ctrl+Y)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Print (Ctrl+P)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Zoom -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Zoom">
+                <option>100%</option>
+                <option>125%</option>
+                <option>150%</option>
+                <option>200%</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Styles -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[120px]" title="Styles">
+                <option>Normal text</option>
+                <option>Title</option>
+                <option>Subtitle</option>
+                <option>Heading 1</option>
+                <option>Heading 2</option>
+                <option>Heading 3</option>
+              </select>
+
+              <!-- Font Family -->
+              <select class="toolbar-btn px-3 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light min-w-[140px]" title="Font">
+                <option>Times New Roman</option>
+                <option>Arial</option>
+                <option>Calibri</option>
+                <option>Georgia</option>
+                <option>Verdana</option>
+              </select>
+
+              <!-- Font Size -->
+              <select class="toolbar-btn px-2 py-1 text-sm border border-google-border rounded hover:bg-google-gray-light" title="Font size">
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+                <option>11</option>
+                <option selected>12</option>
+                <option>14</option>
+                <option>16</option>
+                <option>18</option>
+                <option>24</option>
+              </select>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Text Formatting -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bold (Ctrl+B)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M8 4h3a3 3 0 010 6H8zM8 10h4a3 3 0 010 6H8z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Italic (Ctrl+I)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4h6v2h-2.586l-3.828 8H16v2H8v-2h2.586l3.828-8H10z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Underline (Ctrl+U)">
+                <svg class="w-4 h-4 text-google-gray" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4h2v5a3 3 0 006 0V4h2v5a5 5 0 11-10 0V4zM4 16h12v2H4z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Text color">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Alignment -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align left (Ctrl+Shift+L)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM3 7h10v2H3zM3 10h14v2H3zM3 13h10v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align center (Ctrl+Shift+E)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM5 7h10v2H5zM3 10h14v2H3zM5 13h10v2H5z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Align right (Ctrl+Shift+R)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14v2H3zM7 7h10v2H7zM3 10h14v2H3zM7 13h10v2H7z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- Lists -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Bulleted list (Ctrl+Shift+8)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4h10v2H7zM3 4h2v2H3zM7 9h10v2H7zM3 9h2v2H3zM7 14h10v2H7zM3 14h2v2H3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Numbered list (Ctrl+Shift+7)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h1v5H3zM5 4h12v2H5zM3 10h1v5H3zM5 10h12v2H5zM3 16h1v1H3zM5 16h12v2H5z"/></svg>
+              </button>
+
+              <div class="w-px h-6 bg-google-border mx-1"></div>
+
+              <!-- More tools -->
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert link (Ctrl+K)">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+              </button>
+              <button class="toolbar-btn p-2 rounded hover:bg-google-gray-light" title="Insert image">
+                <svg class="w-4 h-4 text-google-gray" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document -->
+          <div class="flex-1 overflow-auto bg-google-bg px-4 py-8 md:px-12 lg:px-16">
+            <div class="mx-auto bg-white document-shadow w-[816px] min-h-[1056px]">
+              <div id="page" class="font-times text-gray-900" style="padding: 72px 64px; font-size: 12pt; line-height: 1.5;">
+                <h1 class="text-center font-semibold mb-2">Clinic Management System — Developer Manual (Template)</h1>
+
+                <h2 class="font-semibold mt-6 mb-2">1. System Overview</h2>
+                <ul class="list-disc ml-6">
+                  <li><span class="font-semibold">Purpose:</span> A clinic management system to streamline patient care</li>
+                  <li><span class="font-semibold">Scope:</span> Patient management, appointment scheduling, billing</li>
+                  <li><span class="font-semibold">Capabilities:</span> Patient | Staff | Inventory | Consultations | Reporting</li>
+                  <li><span class="font-semibold">Tech Stack:</span> Java 17, Jakarta EE 10, JPA/Hibernate, MySQL, JSP/CSS, Maven, Docker</li>
+                </ul>
+
+                <h2 class="font-semibold mt-6 mb-2">2. Architecture</h2>
+                <div class="mermaid">
+graph TB
+  subgraph Frontend
+    UI[JSP + CSS]
+    JS[ES6+]
+  end
+  subgraph API
+    REST[JAX-RS Endpoints]
+    Auth[Auth Filter]
+  end
+  subgraph Services
+    PatientSvc
+    ConsultSvc
+    MedicineSvc
+    ReportSvc
+  end
+  subgraph Data
+    Repo[Repositories]
+    JPA[JPA/Hibernate]
+    DB[(MySQL)]
+  end
+
+  UI --> REST
+  REST --> Auth
+  Auth --> PatientSvc --> Repo --> JPA --> DB
+  Auth --> ConsultSvc --> Repo
+  Auth --> MedicineSvc --> Repo
+  Auth --> ReportSvc --> Repo
+                </div>
+
+                <h3 class="font-semibold mt-6 mb-2">Authentication Flow</h3>
+                <div class="mermaid">
+flowchart TD
+  A[Login] --> B{Staff or Patient?}
+  B -->|Staff| C[Validate Staff]
+  B -->|Patient| D[Validate Patient]
+  C --> E{OK?}
+  D --> F{OK?}
+  E -->|Yes| G[Create Session] --> H[Dashboard]
+  F -->|Yes| G --> H
+  E -->|No| X[Error]
+  F -->|No| X
+                </div>
+
+                <h3 class="font-semibold mt-6 mb-2">Request/Response Flow</h3>
+                <div class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant UI as Frontend
+  participant API as REST
+  participant S as Services
+  participant DB as MySQL
+
+  U->>UI: Action
+  UI->>API: HTTP Request
+  API->>S: Invoke use case
+  S->>DB: Query/Tx
+  DB-->>S: Rows/Status
+  S-->>API: Result
+  API-->>UI: JSON
+  UI-->>U: Update view
+                </div>
+
+                <h2 class="font-semibold mt-8 mb-2">3. Modules (Fill Per Module)</h2>
+                <p class="mb-2"><span class="font-semibold">Module:</span> &lt;Name&gt; — <span class="font-semibold">Purpose:</span> &lt;1–2 lines&gt;</p>
+                <ul class="list-disc ml-6">
+                  <li>Key Ops: &lt;CRUD / special endpoints&gt;</li>
+                  <li>Validation: required | unique | formats | status</li>
+                  <li>DB Touchpoints: &lt;tables read/write&gt;</li>
+                </ul>
+                <p class="mt-3"><span class="italic">Example — Patient Management:</span> Required: 
+                                  <ul class="list-disc ml-6">
+                                    <li>Required fields:
+                                      <ul class="list-disc ml-6">
+                                        <li>firstName</li>
+                                        <li>lastName</li>
+                                        <li>gender</li>
+                                        <li>dateOfBirth</li>
+                                        <li>email</li>
+                                        <li>contactNumber</li>
+                                      </ul>
+                                    </li>
+                                    <li>Unique: email, studentId, idNumber</li>
+                                    <li>Derived: age from dateOfBirth</li>
+                                    <li>Formats: MY phone, @Email</li>
+                                  </ul>
+
+                <h2 class="font-semibold mt-8 mb-2">4. ER Diagram</h2>
+                <div class="mermaid">
+erDiagram
+  Patient ||--o{ Consultation : has
+  Patient ||--o{ Appointment : schedules
+  Staff   ||--o{ Consultation : conducts
+  Consultation ||--o{ Prescription : prescribes
+  Medicine ||--o{ Prescription : used_in
+  Medicine ||--o{ Orders : batches
+  Supplier ||--o{ Orders : provides
+                </div>
+
+                <h2 class="font-semibold mt-8 mb-2">5. Key Flows</h2>
+                <h3 class="font-semibold mt-4 mb-1">Patient Registration</h3>
+                <div class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant UI as Frontend
+  participant API as Patient API
+  participant BL as Business Logic
+  participant DB as Database
+
+  U->>UI: Fill form
+  UI->>API: POST /patients
+  API->>BL: Validate + generate ID
+  BL->>DB: Insert Patient
+  DB-->>BL: OK
+  BL-->>API: Created
+  API-->>UI: 201 + JSON
+                </div>
+
+                <h3 class="font-semibold mt-6 mb-1">Consultation + Prescription + Stock</h3>
+                <div class="mermaid">
+sequenceDiagram
+  participant D as Doctor
+  participant API as Consult API
+  participant S as StockSvc
+  participant DB as DB
+
+  D->>API: Create Consultation
+  API->>DB: Save consultation
+  D->>API: Add Rx
+  API->>S: Check FIFO stock
+  S->>DB: Read batches (by expiry)
+  DB-->>S: Batches
+  S-->>API: Available/short
+  API->>DB: Save prescription / deduct stock
+                </div>
+
+                <h2 class="font-semibold mt-8 mb-2">6. Rules & Validation</h2>
+                <ul class="list-disc ml-6">
+                  <li>IDs: Prefix scheme (PA/ST/CO/ME/…)</li>
+                  <li>Unique: email, idNumber, studentId, medicineName</li>
+                  <li>Status: Consultation &amp; Appointment workflows</li>
+                  <li>MC prerequisites: doctor, symptoms, diagnosis</li>
+                  <li>Stock: FIFO, expiry, reorder level</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simplified AI Sidebar -->
+    <aside id="aiSidebar" class="w-0 overflow-hidden bg-white border-l border-google-border shadow-xl flex flex-col editor-transition">
+      <!-- Clean Header with proper overflow handling -->
+      <div class="px-4 py-3 border-b border-google-border bg-gradient-to-r from-google-blue to-blue-600 text-white">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">AI Assistant</div>
+              <div class="text-xs opacity-80 truncate">Ready to help with your document</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="aiCloseV2" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors" title="Close">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="flex-1 min-h-0 flex flex-col w-96">
+        <div id="aiMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="chat-bubble-ai p-3 max-w-[280px]">
+              <div class="text-sm text-gray-800">
+                👋 Hello! I'm your AI writing assistant. I can help you with:
+                <ul class="mt-2 text-xs text-gray-600 space-y-1">
+                  <li>• Improving your writing style</li>
+                  <li>• Grammar and spell checking</li>
+                  <li>• Research and citations</li>
+                  <li>• Document formatting</li>
+                </ul>
+                How can I assist you today?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Improved Input Area -->
+        <div class="p-4 border-t border-google-border bg-white flex-shrink-0">
+          <div class="relative mb-3">
+            <textarea id="aiInput" rows="1" class="w-full resize-none border border-google-border rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent" placeholder="Type your message..." style="min-height: 40px; max-height: 120px;"></textarea>
+            <button id="aiSend" class="absolute right-2 bottom-2 w-8 h-8 bg-google-blue text-white rounded-md hover:bg-google-blue-dark transition-colors flex items-center justify-center" title="Send message">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- GitHub button as full-width rounded button -->
+          <button id="githubConnect" class="w-full flex items-center justify-center gap-2 px-2 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium" title="Connect GitHub">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+            </svg>
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Initialize title from URL (static prototype)
+    (function(){
+      const p = new URLSearchParams(location.search);
+      const t = p.get('template') || p.get('name');
+      if (t) { const el = document.getElementById('docTitle'); if (el) el.value = t; }
+    })();
+
+    // Simplified AI chat logic with improved send button positioning
+    (function(){
+      const input = document.getElementById('aiInput');
+      const send = document.getElementById('aiSend');
+      const box = document.getElementById('aiMessages');
+      const panel = document.getElementById('aiSidebar');
+      const closeBtn = document.getElementById('aiCloseV2');
+      const openBtn = document.getElementById('aiOpenV2');
+      const githubBtn = document.getElementById('githubConnect');
+      
+      // Auto-resize textarea and adjust send button position
+      function autoResize() {
+        input.style.height = 'auto';
+        const newHeight = Math.min(input.scrollHeight, 120);
+        input.style.height = newHeight + 'px';
+        
+        // Adjust send button position based on textarea height
+        const lines = Math.ceil((newHeight - 16) / 20); // Approximate line height
+        if (lines > 1) {
+          send.style.bottom = '10px'; // Move up when multiple lines
+        } else {
+          send.style.bottom = '8px'; // Default position for single line
+        }
+      }
+      
+      // Add message to chat
+      function addMessage(type, text, isTyping = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start gap-3 ' + (type === 'user' ? 'flex-row-reverse' : '');
+        
+        const avatar = document.createElement('div');
+        avatar.className = type === 'user' 
+          ? 'w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0'
+          : 'w-8 h-8 rounded-full bg-gradient-to-br from-google-blue to-blue-600 flex items-center justify-center flex-shrink-0';
+        avatar.innerHTML = type === 'user' 
+          ? '<span class="text-xs font-semibold text-gray-600">You</span>'
+          : '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        
+        const bubble = document.createElement('div');
+        bubble.className = type === 'user' ? 'chat-bubble-user text-white p-3 max-w-[280px]' : 'chat-bubble-ai p-3 max-w-[280px]';
+        
+        const content = document.createElement('div');
+        content.className = 'text-sm';
+        content.textContent = text;
+        
+        if (isTyping) {
+          content.innerHTML = '<div class="flex items-center gap-1"><span>AI is typing</span><div class="flex gap-1"><div class="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div><div class="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div><div class="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div></div></div>';
+        }
+        
+        bubble.appendChild(content);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        
+        // Remove existing typing indicator if any
+        const existingTyping = box.querySelector('.typing-indicator');
+        if (existingTyping) existingTyping.remove();
+        
+        if (isTyping) {
+          messageDiv.classList.add('typing-indicator');
+        }
+        
+        box.appendChild(messageDiv);
+        box.scrollTop = box.scrollHeight;
+        
+        return messageDiv;
+      }
+      
+      // Send message → propose preview changes (no direct edits)
+      function onSend() {
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        input.value = '';
+        autoResize();
+        // Only trigger when message includes intent keywords
+        const intent = /(bootstrap|tech\s*stack|architecture|tailwind)/i.test(text);
+        if (intent) {
+          // Start with Tech Stack proposal
+          proposeTechStackChange();
+        } else {
+          addMessage('ai', 'I can propose edits when you mention terms like "Bootstrap", "tech stack", "Tailwind", or "architecture".');
+        }
+      }
+      
+      // Event listeners
+      input.addEventListener('input', autoResize);
+      
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      });
+      
+      send.addEventListener('click', onSend);
+      
+      // Open/Close sidebar
+      if (openBtn && panel) {
+        openBtn.addEventListener('click', () => {
+          panel.classList.remove('w-0');
+          panel.classList.add('w-96');
+          openBtn.style.display = 'none';
+          setTimeout(() => {
+            input.focus();
+            autoResize(); // Initial resize when opening
+          }, 300);
+        });
+      }
+      
+      if (closeBtn && panel) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.remove('w-96');
+          panel.classList.add('w-0');
+          if (openBtn) openBtn.style.display = 'inline-flex';
+        });
+      }
+      
+      // GitHub connection quick reply (kept simple)
+      if (githubBtn) {
+        githubBtn.addEventListener('click', () => {
+          addMessage('ai', '🔗 GitHub integration prototype: I will post updates here after connecting.');
+        });
+      }
+      
+      // Initial setup
+      autoResize();
+
+      // ===== Preview/Confirm helpers =====
+      function findTechStackLi() {
+        const page = document.getElementById('page');
+        if (!page) return null;
+        const items = page.querySelectorAll('li');
+        for (const li of items) {
+          if ((li.textContent || '').trim().startsWith('Tech Stack:')) return li;
+        }
+        return null;
+      }
+
+      // Insert preview card inline in the document area near the change target
+      function insertInlinePreview(afterTargetEl, title, beforeText, afterText, onAccept) {
+        const page = document.getElementById('page');
+        if (!page || !afterTargetEl) return;
+        // Remove any existing preview card to avoid duplicates
+        const existing = page.querySelector('.inline-preview-card');
+        if (existing) existing.remove();
+        const card = document.createElement('div');
+        card.className = 'inline-preview-card mt-3 mb-4 p-3 bg-white border border-google-border rounded-lg text-xs max-w-[720px]';
+        // highlight tokens
+        const beforeHi = beforeText
+          .replace(/Tailwind/ig, '<mark class="bg-red-200 px-1 rounded">$&</mark>')
+          .replace(/CSS/ig, '<mark class="bg-yellow-200 px-1 rounded">$&</mark>');
+        const afterHi = afterText
+          .replace(/Bootstrap/ig, '<mark class="bg-green-200 px-1 rounded">$&</mark>');
+        card.innerHTML = `
+          <div class="text-sm font-medium mb-2">${title}</div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="border border-red-200 bg-red-50 rounded p-2">
+              <div class="text-red-700 font-medium mb-1">Before</div>
+              <code class="break-words">${beforeHi}</code>
+            </div>
+            <div class="border border-green-200 bg-green-50 rounded p-2">
+              <div class="text-green-700 font-medium mb-1">After</div>
+              <code class="break-words">${afterHi}</code>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 justify-end">
+            <button class="inline-prev-cancel px-3 py-1.5 border border-google-border rounded hover:bg-white">Cancel</button>
+            <button class="inline-prev-apply px-3 py-1.5 bg-google-blue text-white rounded hover:bg-google-blue-dark">Apply ✓</button>
+          </div>`;
+        afterTargetEl.insertAdjacentElement('afterend', card);
+        card.querySelector('.inline-prev-cancel').addEventListener('click', ()=> card.remove());
+        card.querySelector('.inline-prev-apply').addEventListener('click', ()=>{ onAccept(); card.remove(); });
+      }
+
+      function proposeTechStackChange() {
+        const li = findTechStackLi();
+        if (!li) { addMessage('ai', 'I could not find the Tech Stack line to edit.'); return; }
+        const before = li.textContent.trim();
+        const after = before.replace(/JSP\/(Tailwind|CSS)/i, 'JSP/Bootstrap');
+        if (before === after) { addMessage('ai', 'Tech Stack already mentions Bootstrap.'); proposeArchitectureChange(); return; }
+        insertInlinePreview(li, 'Change Tech Stack: Tailwind → Bootstrap', before, after, ()=>{
+          li.textContent = after;
+          // After accepting tech stack, propose architecture change next
+          setTimeout(proposeArchitectureChange, 300);
+        });
+      }
+
+      function proposeArchitectureChange() {
+        const blocks = Array.from(document.querySelectorAll('#page .mermaid'));
+        const arch = blocks.find(d => /JSP \+ /i.test(d.textContent || ''));
+        if (!arch) { addMessage('ai', 'No architecture diagram found to update.'); return; }
+        const before = arch.textContent;
+        const after = before.replace(/JSP \+ (Tailwind|CSS)/i, 'JSP + Bootstrap');
+        if (before === after) { addMessage('ai', 'Architecture diagram already uses Bootstrap.'); return; }
+        // Insert inline preview just above the diagram
+        insertInlinePreview(arch, 'Change Architecture Node: Tailwind → Bootstrap', before, after, async ()=>{
+          // Use Mermaid render API to avoid CSS dump artifacts
+          try {
+            const id = 'arch-' + Date.now();
+            if (window.mermaid && mermaid.render) {
+              const { svg } = await mermaid.render(id, after);
+              const container = document.createElement('div');
+              container.className = 'mermaid-render';
+              container.innerHTML = svg;
+              arch.classList.add('hidden');
+              arch.insertAdjacentElement('afterend', container);
+            } else {
+              // Fallback to init/run
+              const newBlock = document.createElement('div');
+              newBlock.className = 'mermaid';
+              newBlock.textContent = after;
+              arch.classList.add('hidden');
+              arch.insertAdjacentElement('afterend', newBlock);
+              if (window.mermaid && mermaid.run) { mermaid.run({ nodes: [newBlock] }); }
+              else if (window.mermaid && mermaid.init) { mermaid.init(undefined, newBlock); }
+            }
+          } catch(e){ console.warn('Mermaid render error', e); }
+        });
+      }
+    })();
+
+    // Avatar hover effects
+    document.getElementById('avatarGroup').addEventListener('click', (e) => {
+      if (e.target.closest('.w-8')) {
+        console.log('Avatar clicked:', e.target.title);
+      }
+    });
+
+    // ---- Inline comparison previews in the document area (non-dynamic demo) ----
+    (function inlinePreviews(){
+      const page = document.getElementById('page');
+      if (!page) return;
+
+      // 1) Tech Stack preview card under System Overview
+      const techLi = Array.from(page.querySelectorAll('li')).find(li => (li.textContent||'').trim().startsWith('Tech Stack:'));
+      if (techLi && !document.getElementById('tech-preview-card')){
+        const before = techLi.textContent.trim();
+        const after = before.replace(/JSP\/(Tailwind|CSS)/i, 'JSP/Bootstrap');
+        const card = document.createElement('div');
+        card.id = 'tech-preview-card';
+        card.className = 'mt-3 mb-4 p-3 bg-white border border-google-border rounded-lg text-xs max-w-[640px]';
+        card.innerHTML = `
+          <div class="text-sm font-medium mb-2">Proposed change: Tech Stack (Tailwind → Bootstrap)</div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="border border-red-200 bg-red-50 rounded p-2">
+              <div class="text-red-700 font-medium mb-1">Before</div>
+              <code class="break-words">${before.replace(/</g,'&lt;')}</code>
+            </div>
+            <div class="border border-green-200 bg-green-50 rounded p-2">
+              <div class="text-green-700 font-medium mb-1">After</div>
+              <code class="break-words">${after.replace(/</g,'&lt;')}</code>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 justify-end">
+            <button class="btn-tech-cancel px-3 py-1.5 border border-google-border rounded hover:bg-white">Cancel</button>
+            <button class="btn-tech-apply px-3 py-1.5 bg-google-blue text-white rounded hover:bg-google-blue-dark">Apply ✓</button>
+          </div>`;
+        techLi.insertAdjacentElement('afterend', card);
+        card.querySelector('.btn-tech-cancel').addEventListener('click', ()=> card.remove());
+        card.querySelector('.btn-tech-apply').addEventListener('click', ()=>{
+          techLi.textContent = after;
+          card.remove();
+          // reveal architecture preview next
+          showArchPreview();
+        });
+      }
+
+      // 2) Architecture diagram preview card before the first Mermaid block
+      function showArchPreview(){
+        const archBlock = page.querySelector('.mermaid');
+        if (!archBlock || document.getElementById('arch-preview-card')) return;
+        const beforeSnippet = 'UI[JSP + Tailwind] / UI[JSP + CSS]';
+        const afterSnippet = 'UI[JSP + Bootstrap]';
+        const card = document.createElement('div');
+        card.id = 'arch-preview-card';
+        card.className = 'mt-4 mb-4 p-3 bg-white border border-google-border rounded-lg text-xs max-w-[640px]';
+        card.innerHTML = `
+          <div class="text-sm font-medium mb-2">Proposed change: Architecture node (Tailwind/CSS → Bootstrap)</div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="border border-red-200 bg-red-50 rounded p-2">
+              <div class="text-red-700 font-medium mb-1">Before</div>
+              <code class="break-words">${beforeSnippet}</code>
+            </div>
+            <div class="border border-green-200 bg-green-50 rounded p-2">
+              <div class="text-green-700 font-medium mb-1">After</div>
+              <code class="break-words">${afterSnippet}</code>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 justify-end">
+            <button class="btn-arch-cancel px-3 py-1.5 border border-google-border rounded hover:bg-white">Cancel</button>
+            <button class="btn-arch-apply px-3 py-1.5 bg-google-blue text-white rounded hover:bg-google-blue-dark">Apply ✓</button>
+          </div>`;
+        archBlock.insertAdjacentElement('beforebegin', card);
+        card.querySelector('.btn-arch-cancel').addEventListener('click', ()=> card.remove());
+        card.querySelector('.btn-arch-apply').addEventListener('click', ()=>{
+          // create a new mermaid block with Bootstrap wording, hide old to avoid CSS dump
+          const newBlock = document.createElement('div');
+          newBlock.className = 'mermaid';
+          newBlock.textContent = `graph TB\n  subgraph Frontend\n    UI[JSP + Bootstrap]\n    JS[ES6+]\n  end\n  subgraph API\n    REST[JAX-RS Endpoints]\n    Auth[Auth Filter]\n  end\n  subgraph Services\n    PatientSvc\n    ConsultSvc\n    MedicineSvc\n    ReportSvc\n  end\n  subgraph Data\n    Repo[Repositories]\n    JPA[JPA/Hibernate]\n    DB[(MySQL)]\n  end\n\n  UI --> REST\n  REST --> Auth\n  Auth --> PatientSvc --> Repo --> JPA --> DB\n  Auth --> ConsultSvc --> Repo\n  Auth --> MedicineSvc --> Repo\n  Auth --> ReportSvc --> Repo`;
+          archBlock.classList.add('hidden');
+          archBlock.insertAdjacentElement('afterend', newBlock);
+          // Re-render Mermaid for the new block only
+          try {
+            if (window.mermaid && mermaid.run) { mermaid.run({ nodes: [newBlock] }); }
+            else if (window.mermaid && mermaid.init) { mermaid.init(undefined, newBlock); }
+          } catch(e){ console.warn('Mermaid render error', e); }
+          card.remove();
+        });
+      }
+
+      // If tech preview was already applied earlier, still offer arch preview
+      showArchPreview();
+    })();
+  </script>
+  <!-- Mermaid for diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: true, securityLevel: 'loose', theme: 'default' });
+    }
+  </script>
+</body>
+</html>

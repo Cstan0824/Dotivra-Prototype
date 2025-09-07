@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Management System - Documents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { inter: ['Inter','system-ui','sans-serif'] } } } };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    
+    /* Delete button styles */
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      background: rgba(239, 68, 68, 0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      z-index: 10;
+    }
+    
+    .document-card:hover .delete-btn {
+      opacity: 1;
+    }
+    
+    .delete-btn:hover {
+      background: rgba(220, 38, 38, 1);
+      transform: scale(1.1);
+    }
+    
+    .delete-btn i {
+      color: white;
+      font-size: 12px;
+    }
+    
+    /* Animation for hiding documents */
+    .document-card.hiding {
+      animation: fadeOutScale 0.3s ease-out forwards;
+    }
+    
+    @keyframes fadeOutScale {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.95);
+        display: none;
+      }
+    }
+
+    /* Loading animation */
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Dots animation */
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* Progress bar animation */
+    .progress-bar {
+      animation: progress 3s ease-in-out;
+    }
+
+    @keyframes progress {
+      0% { width: 0%; }
+      20% { width: 15%; }
+      40% { width: 35%; }
+      60% { width: 60%; }
+      80% { width: 85%; }
+      100% { width: 100%; }
+    }
+  </style>
+  <script>
+    // Simple search and filter functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchInput');
+      const roleFilter = document.getElementById('roleFilter');
+      const sections = document.querySelectorAll('section[data-section-role]');
+      const addDocumentModal = document.getElementById('addDocumentModal');
+      const aiConfirmationModal = document.getElementById('aiConfirmationModal');
+      const loadingModal = document.getElementById('loadingModal');
+
+      function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedRole = roleFilter.value;
+
+        sections.forEach(section => {
+          const sectionRole = section.dataset.sectionRole;
+          const cards = section.querySelectorAll('.document-card:not(.hiding), .add-document-card');
+          let hasVisibleCards = false;
+
+          const sectionVisible = selectedRole === 'all' || selectedRole === sectionRole;
+
+          if (sectionVisible) {
+            cards.forEach(card => {
+              if (card.classList.contains('add-document-card')) {
+                card.style.display = 'block';
+                hasVisibleCards = true;
+              } else {
+                const title = card.querySelector('h2').textContent.toLowerCase();
+                const matchesSearch = !searchTerm || title.includes(searchTerm);
+                
+                if (matchesSearch) {
+                  card.style.display = 'block';
+                  hasVisibleCards = true;
+                } else {
+                  card.style.display = 'none';
+                }
+              }
+            });
+          }
+
+          section.style.display = (sectionVisible && hasVisibleCards) ? 'block' : 'none';
+        });
+
+        // Update section counts
+        updateSectionCounts();
+      }
+
+      function updateSectionCounts() {
+        sections.forEach(section => {
+          const sectionRole = section.dataset.sectionRole;
+          const visibleCards = section.querySelectorAll('.document-card:not(.hiding):not([style*="display: none"])');
+          const countElement = section.querySelector('h3');
+          const currentText = countElement.textContent;
+          const roleText = currentText.split('(')[0].trim();
+          countElement.innerHTML = `${countElement.innerHTML.split('(')[0]}(${visibleCards.length})`;
+        });
+      }
+
+      // Delete functionality
+      function setupDeleteButtons() {
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const card = btn.closest('.document-card');
+            const documentName = card.querySelector('h2').textContent;
+            
+            if (confirm(`Are you sure you want to delete "${documentName}"?`)) {
+              card.classList.add('hiding');
+              
+              setTimeout(() => {
+                card.style.display = 'none';
+                updateSectionCounts();
+              }, 300);
+            }
+          });
+        });
+      }
+
+      // Initialize delete buttons
+      setupDeleteButtons();
+
+      searchInput.addEventListener('input', applyFilters);
+      roleFilter.addEventListener('change', applyFilters);
+
+      // Modal functionality
+      const addDocumentCards = document.querySelectorAll('.add-document-card');
+      const docNameInput = document.getElementById('documentName');
+      const roleSelect = document.getElementById('roleSelect');
+      const templateGrid = document.getElementById('templateGrid');
+      const createBtn = document.getElementById('createDocumentBtn');
+      const aiRequirementsInput = document.getElementById('aiRequirements');
+
+      let selectedTemplate = null;
+      let currentRole = '';
+
+      // Available templates for each role
+      function getAvailableTemplates() {
+        return {
+          developer: [
+            { id: 'api', name: 'API Documentation', desc: 'Define API endpoints and specifications', icon: 'fas fa-code' },
+            { id: 'commit-log', name: 'Commit Log', desc: 'Document commit history and changes', icon: 'fas fa-list-alt' },
+            { id: 'developer-manual', name: 'Developer Manual', desc: 'Complete development guide', icon: 'fas fa-book-open' },
+            { id: 'srs', name: 'SRS Documentation', desc: 'Software Requirements Specification', icon: 'fas fa-file-contract' },
+            { id: 'system-summary-overview', name: 'System Summary', desc: 'System overview and architecture', icon: 'fas fa-sitemap' }
+          ],
+          user: [
+            { id: 'user-manual', name: 'User Manual', desc: 'Complete user guide and instructions', icon: 'fas fa-book' }
+          ]
+        };
+      }
+
+      // Open add document modal
+      addDocumentCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          currentRole = card.dataset.role;
+          roleSelect.value = currentRole;
+          updateTemplateGrid();
+          addDocumentModal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        });
+      });
+
+      // Close modals
+      document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          addDocumentModal.classList.add('hidden');
+          aiConfirmationModal.classList.add('hidden');
+          loadingModal.classList.add('hidden');
+          document.body.style.overflow = 'auto';
+          resetModal();
+        });
+      });
+
+      // Close modal on backdrop click
+      [addDocumentModal, aiConfirmationModal, loadingModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            resetModal();
+          }
+        });
+      });
+
+      function updateTemplateGrid() {
+        const role = roleSelect.value;
+        if (!role) {
+          templateGrid.innerHTML = `
+            <div class="col-span-full flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
+              Select a role to see available templates
+            </div>
+          `;
+          return;
+        }
+        
+        const templates = getAvailableTemplates()[role] || [];
+        
+        templateGrid.innerHTML = templates.map(template => `
+          <div class="template-option cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-gray-400 hover:shadow-sm transition-all bg-white group" 
+               data-template-id="${template.id}">
+            <div class="flex flex-col items-center text-center">
+              <div class="w-12 h-12 bg-gray-100 rounded-lg mb-3 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                <i class="${template.icon} text-gray-600 text-lg"></i>
+              </div>
+              <h4 class="font-medium text-gray-800 text-sm mb-1">${template.name}</h4>
+              <p class="text-xs text-gray-500 leading-relaxed">${template.desc}</p>
+            </div>
+          </div>
+        `).join('');
+
+        // Add click handlers to template options
+        document.querySelectorAll('.template-option').forEach(option => {
+          option.addEventListener('click', () => {
+            document.querySelectorAll('.template-option').forEach(opt => {
+              opt.classList.remove('border-gray-600', 'bg-gray-50');
+              opt.classList.add('border-gray-300', 'bg-white');
+            });
+            option.classList.remove('border-gray-300', 'bg-white');
+            option.classList.add('border-gray-600', 'bg-gray-50');
+            selectedTemplate = option.dataset.templateId;
+          });
+        });
+
+        selectedTemplate = null;
+      }
+
+      function resetModal() {
+        docNameInput.value = '';
+        roleSelect.value = '';
+        selectedTemplate = null;
+        aiRequirementsInput.value = '';
+        templateGrid.innerHTML = `
+          <div class="flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
+            Select a role to see available templates
+          </div>
+        `;
+      }
+
+      // Event listeners
+      roleSelect.addEventListener('change', updateTemplateGrid);
+
+      createBtn.addEventListener('click', () => {
+        // Show AI confirmation modal
+        addDocumentModal.classList.add('hidden');
+        
+        // Populate AI modal with document info
+        document.getElementById('docNameDisplay').textContent = docNameInput.value || 'Untitled Document';
+        document.getElementById('roleDisplay').textContent = roleSelect.value || 'Unknown';
+        document.getElementById('templateDisplay').textContent = selectedTemplate ? getTemplateName(selectedTemplate) : 'No Template Selected';
+        document.getElementById('projectDisplay').textContent = 'Clinic Management System';
+        
+        aiConfirmationModal.classList.remove('hidden');
+        aiRequirementsInput.focus();
+      });
+
+      // Helper function to get template name by ID
+      function getTemplateName(templateId) {
+        const templates = Object.values(getAvailableTemplates()).flat();
+        const template = templates.find(t => t.id === templateId);
+        return template ? template.name : templateId;
+      }
+
+      // AI confirmation actions
+      document.getElementById('skipAiRequirements').addEventListener('click', () => {
+        proceedToTemplate(false); // Skip AI
+      });
+
+      document.getElementById('proceedWithAi').addEventListener('click', () => {
+        proceedToTemplate(true); // Use AI
+      });
+
+      function showLoadingAndNavigate(url, useAI = false) {
+        // Hide the AI confirmation modal
+        aiConfirmationModal.classList.add('hidden');
+        
+        // Show loading modal
+        loadingModal.classList.remove('hidden');
+        
+        // Update loading text based on AI usage
+        const loadingText = document.getElementById('loadingText');
+        const loadingMessage = document.getElementById('loadingMessage');
+        
+        if (useAI) {
+          loadingText.textContent = 'AI is preparing your document';
+          loadingMessage.textContent = 'Generating content based on your requirements...';
+        } else {
+          loadingText.textContent = 'Preparing your document';
+          loadingMessage.textContent = 'Setting up the template for you...';
+        }
+        
+        // Simulate loading time (3 seconds)
+        setTimeout(() => {
+          window.location.href = url;
+        }, 3000);
+      }
+
+      function proceedToTemplate(useAI = false) {
+        // Check if no template was selected
+        if (!selectedTemplate || selectedTemplate === null || selectedTemplate === 'undefined') {
+          // Scenario 1: No template + Skip AI
+          if (confirm('An empty document will be created. Continue?')) {
+            showLoadingAndNavigate('./emptyEditor.html', false);
+          }
+        } else {
+          // Template was selected
+          if (!useAI) {
+            // Scenario 2: Template selected + Skip AI -> Go to blank templates
+            if (confirm('Template will be applied without content. Continue?')) {
+              const blankTemplateRoutes = {
+                'api': './clinic-blank-template/api-blank-temp.html',
+                'commit-log': './clinic-blank-template/commit-blank-template.html',
+                'developer-manual': './clinic-blank-template/developer-manual-temp.html',
+                'srs': './clinic-blank-template/srs-blank-template.html',
+                'system-summary-overview': './clinic-blank-template/summary-blank-template.html',
+                'user-manual': './clinic-blank-template/blankTemplate.html'
+              };
+              
+              const templateUrl = blankTemplateRoutes[selectedTemplate] || './clinic-blank-template/blankTemplate.html';
+              showLoadingAndNavigate(templateUrl, false);
+            }
+          } else {
+            // Scenario 3: Template selected + Use AI -> Go to filled templates
+            const aiTemplateRoutes = {
+              'api': './clinic-template/apiTemplate.html',
+              'commit-log': './clinic-template/apiTemplate.html', // Using API template as fallback for commit-log
+              'developer-manual': './clinic-template/developer-manual-template.html',
+              'srs': './clinic-template/srsTemplate.html',
+              'system-summary-overview': './clinic-template/summarySystem.html',
+              'user-manual': './clinic-template/user-manual-template.html'
+            };
+            
+            const templateUrl = aiTemplateRoutes[selectedTemplate] || './clinic-template/apiTemplate.html';
+            showLoadingAndNavigate(templateUrl, true);
+          }
+        }
+      }
+
+      // Initialize section counts
+      updateSectionCounts();
+    });
+  </script>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="text-xl font-semibold text-blue-600">
+        <i class="fas fa-folder-open mr-2"></i>Dotivra
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="../display/projectOverview.html" class="text-sm text-gray-600 hover:text-blue-600">← Back to Projects</a>
+        <span class="text-gray-700">John Doe</span>
+        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 id="projectName" class="text-lg font-semibold">Clinic Management System</h1>
+        <p id="projectDesc" class="text-sm text-gray-600">A comprehensive clinic management system for patient care, appointments, and medical records.</p>
+        <a id="repoLink" href="https://github.com/clinic/management-system" target="_blank" class="text-xs text-blue-600 underline">https://github.com/clinic/management-system</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium uppercase tracking-wide rounded-full">Active</div>
+        <div class="flex items-center -space-x-1">
+          <div class="w-6 h-6 bg-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Alice Johnson">AJ</div>
+          <div class="w-6 h-6 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Bob Smith">BS</div>
+          <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs" title="Carol Wilson">CW</div>
+          <div class="w-6 h-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 text-xs">+2</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-col sm:flex-row gap-3 sm:items-center mb-6">
+      <div class="flex-1">
+        <label for="searchInput" class="sr-only">Search documents</label>
+        <input id="searchInput" type="text" placeholder="Search documents..." class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+      <div>
+        <select id="roleFilter" class="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <option value="all">All roles</option>
+          <option value="developer">Developer</option>
+          <option value="user">User</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Role Sections -->
+    <div id="roleSections" class="space-y-8">
+      <section data-section-role="developer">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-blue-200 pb-3 flex items-center gap-3">
+          <i class="fas fa-code text-blue-600"></i>
+          Developer (4)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- API Documentation Card -->
+          <a href="./clinic-template/apiTemplate.html" class="document-card group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white relative">
+            <button class="delete-btn" title="Delete document">
+              <i class="fas fa-trash"></i>
+            </button>
+            <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+              <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+                <div class="h-2 bg-gray-400 w-3/5 rounded mb-1"></div>
+                <div class="space-y-1">
+                  <div class="h-1 bg-gray-200 w-11/12 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-3/5 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-4/5 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between">
+                <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">Clinic Management System API Documentation</h2>
+                <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-500"> Updated 2 hours ago</p>
+              <div class="mt-3 flex items-center -space-x-1">
+                <div class="w-6 h-6 bg-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Alice Johnson">AJ</div>
+                <div class="w-6 h-6 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Bob Smith">BS</div>
+                <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Carol Wilson">CW</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Database Schema Card -->
+          <a href="./clinic-template/developer-manual-template.html" class="document-card group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white relative">
+            <button class="delete-btn" title="Delete document">
+              <i class="fas fa-trash"></i>
+            </button>
+            <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+              <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+                <div class="h-2 bg-gray-400 w-3/5 rounded mb-1"></div>
+                <div class="space-y-1">
+                  <div class="h-1 bg-gray-200 w-11/12 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-3/5 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-4/5 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between">
+                <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">Clinic Management System Developer Manual</h2>
+                <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">
+                Updated 6 hours ago</p>
+              <div class="mt-3 flex items-center -space-x-1">
+                <div class="w-6 h-6 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Bob Smith">BS</div>
+                <div class="w-6 h-6 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="David Lee">DL</div>
+                <div class="w-6 h-6 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Emma Davis">ED</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Installation Guide Card -->
+          <a href="./clinic-template/summarySystem.html" class="document-card group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white relative">
+            <button class="delete-btn" title="Delete document">
+              <i class="fas fa-trash"></i>
+            </button>
+            <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+              <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+                <div class="h-2 bg-gray-400 w-3/5 rounded mb-1"></div>
+                <div class="space-y-1">
+                  <div class="h-1 bg-gray-200 w-11/12 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-3/5 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-4/5 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between">
+                <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">Clinic Management System Overview</h2>
+                <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Updated 1 day ago</p>
+              <div class="mt-3 flex items-center -space-x-1">
+                <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Carol Wilson">CW</div>
+                <div class="w-6 h-6 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Frank Miller">FM</div>
+                <div class="w-6 h-6 bg-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Alice Johnson">AJ</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Architecture Overview Card -->
+          <a href="./clinic-template/srsTemplate.html" class="document-card group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white relative">
+            <button class="delete-btn" title="Delete document">
+              <i class="fas fa-trash"></i>
+            </button>
+            <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+              <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+                <div class="h-2 bg-gray-400 w-3/5 rounded mb-1"></div>
+                <div class="space-y-1">
+                  <div class="h-1 bg-gray-200 w-11/12 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-3/5 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-4/5 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between">
+                <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">Clinic Management System SRS Documentation</h2>
+                <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Updated 3 days ago</p>
+              <div class="mt-3 flex items-center -space-x-1">
+                <div class="w-6 h-6 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="David Lee">DL</div>
+                <div class="w-6 h-6 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Bob Smith">BS</div>
+                <div class="w-6 h-6 bg-purple-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Emma Davis">ED</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Add Document Card -->
+          <div class="add-document-card group cursor-pointer border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50/30 transition-all bg-gray-50/50" data-role="developer">
+            <div class="h-28 bg-transparent border-b border-dashed border-gray-200 p-3">
+              <div class="w-full h-14 border-2 border-dashed border-gray-300 rounded-sm flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                <i class="fas fa-plus text-gray-400 text-xl group-hover:text-blue-500 transition-colors"></i>
+              </div>
+            </div>
+            <div class="p-4 text-center">
+              <h2 class="text-base font-medium text-gray-500 group-hover:text-blue-600 transition-colors">Add developer document</h2>
+              <p class="mt-1 text-xs text-gray-400">Create new documentation</p>
+              <div class="mt-3 flex items-center justify-center">
+                <div class="w-6 h-6 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                  <i class="fas fa-plus text-gray-400 text-xs group-hover:text-blue-500 transition-colors"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <section data-section-role="user">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+          <i class="fas fa-user-friends text-green-600"></i>
+          User (1)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- User Manual Card -->
+          <a href="./clinic-template/user-manual-template.html" class="document-card group block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:border-blue-300 transition-all bg-white relative">
+            <button class="delete-btn" title="Delete document">
+              <i class="fas fa-trash"></i>
+            </button>
+            <div class="h-28 bg-gray-50 border-b border-gray-100 p-3">
+              <div class="w-full h-14 bg-white border border-gray-200 rounded-sm p-2 overflow-hidden">
+                <div class="h-2 bg-gray-500 w-4/5 rounded mb-1"></div>
+                <div class="space-y-1">
+                  <div class="h-1 bg-gray-200 w-full rounded"></div>
+                  <div class="h-1 bg-gray-200 w-2/3 rounded"></div>
+                  <div class="h-1 bg-gray-200 w-5/6 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-start justify-between">
+                <h2 class="text-base font-medium group-hover:text-blue-600 transition-colors">User Manual</h2>
+                <span class="text-gray-400 group-hover:text-blue-600 transition-colors">→</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Project: Clinic Management System · Updated 4 hours ago</p>
+              <div class="mt-3 flex items-center -space-x-1">
+                <div class="w-6 h-6 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Frank Miller">FM</div>
+                <div class="w-6 h-6 bg-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px]" title="Alice Johnson">AJ</div>
+                <div class="w-6 h-6 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[text-[10px]" title="David Lee">DL</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Add Document Card -->
+          <div class="add-document-card group cursor-pointer border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50/30 transition-all bg-gray-50/50" data-role="user">
+            <div class="h-28 bg-transparent border-b border-dashed border-gray-200 p-3">
+              <div class="w-full h-14 border-2 border-dashed border-gray-300 rounded-sm flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                <i class="fas fa-plus text-gray-400 text-xl group-hover:text-blue-500 transition-colors"></i>
+              </div>
+            </div>
+            <div class="p-4 text-center">
+              <h2 class="text-base font-medium text-gray-500 group-hover:text-blue-600 transition-colors">Add user document</h2>
+              <p class="mt-1 text-xs text-gray-400">Create new documentation</p>
+              <div class="mt-3 flex items-center justify-center">
+                <div class="w-6 h-6 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                  <i class="fas fa-plus text-gray-400 text-xs group-hover:text-blue-500 transition-colors"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Add Document Modal -->
+  <div id="addDocumentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div>
+          <h1 class="text-2xl font-semibold text-gray-800">Add New Document</h1>
+          <p class="text-sm text-gray-600">Project: <span class="font-medium">Clinic Management System</span></p>
+        </div>
+        <button data-close-modal class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Left Column - Document Info -->
+          <div class="space-y-6">
+            <div>
+              <label for="documentName" class="block text-sm font-medium text-gray-700 mb-2">Document Name *</label>
+              <input id="documentName" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., User Authentication Guide" />
+            </div>
+
+            <div>
+              <label for="roleSelect" class="block text-sm font-medium text-gray-700 mb-2">Target Role *</label>
+              <select id="roleSelect" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Select a role</option>
+                <option value="developer">Developer</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right Column - Template Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-4">Choose Template *</label>
+            <div id="templateGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-2">
+              <div class="flex items-center justify-center h-40 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
+                Select a role to see available templates
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <button data-close-modal class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
+        <button id="createDocumentBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          Create Document
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Confirmation Modal -->
+  <div id="aiConfirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-robot text-blue-600"></i>
+            AI Assistance Requirements
+          </h2>
+          <p class="text-sm text-gray-600 mt-1">Tell the AI what you need help with for this document</p>
+        </div>
+        <button data-close-modal class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Document Info -->
+      <div class="p-6 border-b border-gray-200 bg-gray-50">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-gray-500">Document Name:</span>
+            <p class="font-medium" id="docNameDisplay"></p>
+          </div>
+          <div>
+            <span class="text-gray-500">Role:</span>
+            <p class="font-medium capitalize" id="roleDisplay"></p>
+          </div>
+          <div>
+            <span class="text-gray-500">Template:</span>
+            <p class="font-medium" id="templateDisplay"></p>
+          </div>
+          <div>
+            <span class="text-gray-500">Project:</span>
+            <p class="font-medium" id="projectDisplay"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <label for="aiRequirements" class="block text-sm font-medium text-gray-700 mb-2">
+              What would you like the AI to help you with?
+            </label>
+            <textarea 
+              id="aiRequirements" 
+              rows="6" 
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" 
+              placeholder="e.g., Generate API endpoints for user management, Create database schema for patient records, Write installation steps for the system..."
+            ></textarea>
+          </div>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-lightbulb text-blue-600 mt-1"></i>
+              <div>
+                <h4 class="text-sm font-medium text-blue-800 mb-1">Pro Tips:</h4>
+                <ul class="text-xs text-blue-700 space-y-1">
+                  <li>• Be specific about what sections or content you need</li>
+                  <li>• Mention any technical requirements or constraints</li>
+                  <li>• Include examples if you have specific formatting preferences</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        <button id="skipAiRequirements" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+          Skip AI Assistance
+        </button>
+        <button id="proceedWithAi" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          Proceed with AI Help
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Modal -->
+  <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+      <!-- Body -->
+      <div class="p-8 text-center">
+        <!-- Loading Spinner -->
+        <div class="loading-spinner mx-auto mb-6"></div>
+        
+        <!-- Loading Text -->
+        <div class="space-y-2">
+          <h3 id="loadingText" class="text-lg font-semibold text-gray-800 loading-dots">
+            Preparing your document
+          </h3>
+          <p id="loadingMessage" class="text-sm text-gray-600">
+            Setting up the template for you...
+          </p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mt-6">
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full progress-bar"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">This should only take a moment</p>
+        </div>
+
+        <!-- Cancel Button -->
+        <button data-close-modal class="mt-6 px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
