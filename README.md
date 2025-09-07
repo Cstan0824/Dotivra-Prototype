@@ -143,5 +143,3 @@ This repo provides a **clickable front‑end prototype** and maps the **exact de
 - **Different port** → Update `5500` in URLs.
 
 ---
-
-**Enjoy the demo!** For GitHub, consider adding screenshots/GIFs and linking the demo video from the repo home for quick orientation.
